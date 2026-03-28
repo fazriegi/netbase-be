@@ -1,0 +1,6 @@
+config.json
+log/
+bin/
+.env
+tmp/
+.air.toml
