@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"log"
+	"math"
 	"net/http"
 
 	"github.com/fazriegi/fintrack-be/internal/domain"
@@ -32,13 +33,36 @@ func (u *assetUsecase) ListAsset(ctx context.Context, req *domain.ListAssetReque
 	userId := ctx.Value("user_id").(uuid.UUID)
 	req.UserId = userId
 
-	assets, err := u.repo.ListAsset(ctx, req, u.db)
+	assets, total, err := u.repo.ListAsset(ctx, req, u.db)
 	if err != nil {
 		u.log.Printf("[ERROR] repo.ListAsset: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
-	return pkg.NewResponse(http.StatusOK, "Success", assets, nil)
+	var paginationMeta pkg.PaginationMeta
+	if req.Limit != nil && *req.Limit > 0 {
+		limit := int(*req.Limit)
+		page := 1
+
+		if req.Page != nil && *req.Page > 0 {
+			page = int(*req.Page)
+		}
+
+		totalPages := int(math.Ceil(float64(total) / float64(limit)))
+
+		if totalPages > 0 && page > totalPages {
+			page = totalPages
+		}
+
+		paginationMeta = pkg.PaginationMeta{
+			Page:       page,
+			Limit:      limit,
+			Total:      int(total),
+			TotalPages: totalPages,
+		}
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", assets, &paginationMeta)
 }
 
 func (u *assetUsecase) ListAssetCategory(ctx context.Context) (resp pkg.Response) {
