@@ -7,6 +7,7 @@ import (
 	"github.com/fazriegi/fintrack-be/pkg"
 	"github.com/fazriegi/fintrack-be/pkg/constant"
 	"github.com/fazriegi/fintrack-be/pkg/token"
+	"github.com/google/uuid"
 )
 
 func MiddlewareAuth(next http.Handler) http.Handler {
@@ -23,7 +24,13 @@ func MiddlewareAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
+		parsedUserID, err := uuid.Parse(claims.UserID)
+		if err != nil {
+			pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil).HTTP(w)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user_id", parsedUserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
