@@ -18,7 +18,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *domain.User, tx *sqlx.Tx) (uuid.UUID, error)
 	GetByEmail(ctx context.Context, email string, db *sqlx.DB) (*domain.User, error)
 	GetByID(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (*domain.User, error)
-	CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, tx *sqlx.Tx) error
+	CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) error
 	InsertRefreshToken(ctx context.Context, data domain.RefreshToken, tx *sqlx.Tx) error
 	SeedDefaultCategories(ctx context.Context, tx *sqlx.Tx, userID uuid.UUID) error
 	RevokeRefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string, tx *sqlx.Tx) error
@@ -56,7 +56,7 @@ func (r *userRepo) GetByID(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (
 	return &user, err
 }
 
-func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, tx *sqlx.Tx) error {
+func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) error {
 	query := `
 		SELECT 1
 		FROM refresh_tokens 
@@ -64,11 +64,10 @@ func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refr
 			AND token = $2
 			AND is_revoked = false
 			AND expires_at > now()
-		FOR UPDATE
 	`
 
 	var exists int
-	err := tx.QueryRowContext(ctx, query, userId, refreshToken).Scan(&exists)
+	err := db.QueryRowContext(ctx, query, userId, refreshToken).Scan(&exists)
 
 	if err != nil {
 		if err == sql.ErrNoRows {

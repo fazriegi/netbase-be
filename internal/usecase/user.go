@@ -149,14 +149,7 @@ func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken string) (r
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
-	tx, err := uc.db.Beginx()
-	if err != nil {
-		uc.log.Printf("[ERROR] error start transaction: %s", err.Error())
-		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
-	}
-	defer tx.Rollback()
-
-	err = uc.repo.CheckRefreshToken(ctx, parsedUserID, refreshToken, tx)
+	err = uc.repo.CheckRefreshToken(ctx, parsedUserID, refreshToken, uc.db)
 	if err != nil {
 		if err.Error() != constant.ErrNotFound {
 			uc.log.Printf("[ERROR] repo.CheckRefreshToken: %s", err.Error())
@@ -165,41 +158,17 @@ func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken string) (r
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
+	// TODO: mekanisme untuk rotate refresh token sehari sebelum expiry, dengan generate token baru dan revoke token lama
+
 	newAccessToken, err := token.GenerateAccessToken(claims.UserID)
 	if err != nil {
 		uc.log.Printf("[ERROR] token.GenerateAccessToken: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
-	newRefreshToken, err := token.GenerateRefreshToken(claims.UserID)
-	if err != nil {
-		uc.log.Printf("[ERROR] token.GenerateRefreshToken: %s", err.Error())
-		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
-	}
-
-	if err := uc.repo.RevokeRefreshToken(ctx, parsedUserID, refreshToken, tx); err != nil {
-		uc.log.Printf("[ERROR] repo.RevokeRefreshToken: %s", err.Error())
-	}
-
-	if err := uc.repo.InsertRefreshToken(ctx, domain.RefreshToken{
-		UserID:     parsedUserID,
-		Token:      newRefreshToken,
-		ExpiresAt:  time.Now().Add(7 * 24 * time.Hour),
-		DeviceInfo: "",
-		IPAddress:  "",
-	}, tx); err != nil {
-		uc.log.Printf("[ERROR] repo.InsertRefreshToken: %s", err.Error())
-		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
-	}
-
-	if err := tx.Commit(); err != nil {
-		uc.log.Printf("[ERROR] commit transaction: %s", err.Error())
-		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
-	}
-
 	return pkg.NewResponse(http.StatusOK, "Success", map[string]any{
 		"access_token":  newAccessToken,
-		"refresh_token": newRefreshToken,
+		"refresh_token": refreshToken,
 	}, nil)
 }
 
