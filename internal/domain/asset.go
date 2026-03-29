@@ -20,7 +20,3 @@ type ListAssetRequest struct {
 	UserId uuid.UUID
 	Search string `query:"search"`
 }
-
-type ListAssetResponse struct {
-	Assets *[]Asset `json:"assets"`
-}

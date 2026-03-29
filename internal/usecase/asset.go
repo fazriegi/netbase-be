@@ -37,5 +37,5 @@ func (u *assetUsecase) ListAsset(ctx context.Context, req *domain.ListAssetReque
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
-	return pkg.NewResponse(http.StatusOK, "Success", &domain.ListAssetResponse{Assets: assets}, nil)
+	return pkg.NewResponse(http.StatusOK, "Success", assets, nil)
 }
