@@ -30,11 +30,26 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 		WHERE assets.user_id = :user_id
 	`
 
+	if req.Name != "" {
+		query += ` AND assets.name ILIKE :name`
+	}
+
+	if req.Category != "" {
+		query += ` AND ac.name ILIKE :category`
+	}
+
+	if req.IsActive != nil {
+		query += ` AND assets.is_active = :is_active`
+	}
+
 	res, err := pkg.SelectWithPagination(ctx, db, query, map[string]interface{}{
-		"page":    req.Page,
-		"limit":   req.Limit,
-		"sort":    req.Sort,
-		"user_id": req.UserId,
+		"page":      req.Page,
+		"limit":     req.Limit,
+		"sort":      req.Sort,
+		"user_id":   req.UserId,
+		"name":      "%" + req.Name + "%",
+		"category":  "%" + req.Category + "%",
+		"is_active": req.IsActive,
 	})
 
 	if err != nil {

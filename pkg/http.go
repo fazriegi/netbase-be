@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -67,7 +66,6 @@ func ParseQueryParam(r *http.Request, dest interface{}) error {
 		} else {
 			// Jika bukan pointer, langsung gunakan field-nya
 			targetField = field
-			fmt.Println("targetField", targetField)
 			baseKind = targetField.Kind()
 		}
 
