@@ -18,9 +18,14 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 	userRepo := repository.NewUserRepository()
 	authUC := usecase.NewUserUsecase(db, logger, userRepo)
 
+	// ASSET
+	assetRepo := repository.NewAssetRepository()
+	assetUC := usecase.NewAssetUsecase(db, logger, assetRepo)
+
 	mux := http.NewServeMux()
 
 	NewUserHandler(mux, authUC, logger)
+	NewAssetHandler(mux, assetUC, logger)
 
 	origin := os.Getenv("ALLOWED_ORIGIN")
 	if origin == "" {

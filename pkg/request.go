@@ -1,7 +1,7 @@
 package pkg
 
 type PaginationRequest struct {
-	Page  *uint   `query:"page"`
-	Limit *uint   `query:"limit"`
+	Page  *int    `query:"page"`
+	Limit *int    `query:"limit"`
 	Sort  *string `query:"sort"`
 }
