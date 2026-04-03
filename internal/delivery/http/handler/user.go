@@ -131,7 +131,7 @@ func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := h.usecase.RefreshToken(r.Context(), cookie.Value)
+	response := h.usecase.RefreshToken(r.Context(), cookie.Value, r.RemoteAddr)
 	if response.Data != nil {
 		data, ok := response.Data.(map[string]any)
 		if !ok {

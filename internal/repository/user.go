@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/fazriegi/fintrack-be/internal/domain"
 	"github.com/fazriegi/fintrack-be/pkg/constant"
@@ -18,7 +19,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *domain.User, tx *sqlx.Tx) (uuid.UUID, error)
 	GetByEmail(ctx context.Context, email string, db *sqlx.DB) (*domain.User, error)
 	GetByID(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (*domain.User, error)
-	CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) error
+	CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) (exp time.Time, err error)
 	InsertRefreshToken(ctx context.Context, data domain.RefreshToken, tx *sqlx.Tx) error
 	SeedDefaultCategories(ctx context.Context, tx *sqlx.Tx, userID uuid.UUID) error
 	RevokeRefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string, tx *sqlx.Tx) error
@@ -56,9 +57,9 @@ func (r *userRepo) GetByID(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (
 	return &user, err
 }
 
-func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) error {
+func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refreshToken string, db *sqlx.DB) (exp time.Time, err error) {
 	query := `
-		SELECT 1
+		SELECT expires_at
 		FROM refresh_tokens 
 		WHERE user_id = $1
 			AND token = $2
@@ -66,18 +67,17 @@ func (r *userRepo) CheckRefreshToken(ctx context.Context, userId uuid.UUID, refr
 			AND expires_at > now()
 	`
 
-	var exists int
-	err := db.QueryRowContext(ctx, query, userId, refreshToken).Scan(&exists)
+	err = db.QueryRowContext(ctx, query, userId, refreshToken).Scan(&exp)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return errors.New(constant.ErrNotFound)
+			return exp, errors.New(constant.ErrNotFound)
 		}
 
-		return err
+		return exp, err
 	}
 
-	return nil
+	return exp, nil
 }
 
 // Ganti nama function jadi Store/Save/Create, karena kita nambah sesi baru

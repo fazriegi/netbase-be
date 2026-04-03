@@ -25,7 +25,7 @@ type userUsecase struct {
 type UserUsecase interface {
 	Register(ctx context.Context, req *domain.RegisterRequest) (resp pkg.Response)
 	Login(ctx context.Context, req *domain.LoginRequest) (resp pkg.Response)
-	RefreshToken(ctx context.Context, refreshToken string) (resp pkg.Response)
+	RefreshToken(ctx context.Context, refreshToken, remoteAddr string) (resp pkg.Response)
 	Profile(ctx context.Context, accessToken string) (resp pkg.Response)
 	Logout(ctx context.Context, accessToken, refreshToken string) (resp pkg.Response)
 }
@@ -136,7 +136,7 @@ func (uc *userUsecase) Login(ctx context.Context, req *domain.LoginRequest) (res
 	}, nil)
 }
 
-func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken string) (resp pkg.Response) {
+func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken, remoteAddr string) (resp pkg.Response) {
 	claims, err := token.ValidateToken(refreshToken)
 	if err != nil {
 		uc.log.Printf("[ERROR] token.ValidateToken: %s", err.Error())
@@ -149,7 +149,7 @@ func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken string) (r
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
-	err = uc.repo.CheckRefreshToken(ctx, parsedUserID, refreshToken, uc.db)
+	tokenExp, err := uc.repo.CheckRefreshToken(ctx, parsedUserID, refreshToken, uc.db)
 	if err != nil {
 		if err.Error() != constant.ErrNotFound {
 			uc.log.Printf("[ERROR] repo.CheckRefreshToken: %s", err.Error())
@@ -158,12 +158,47 @@ func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken string) (r
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
-	// TODO: mekanisme untuk rotate refresh token sehari sebelum expiry, dengan generate token baru dan revoke token lama
+	threeHour := time.Now().Add(3 * time.Hour)
+	if threeHour.After(tokenExp) {
+		tx, err := uc.db.Beginx()
+		if err != nil {
+			uc.log.Printf("[ERROR] error start transaction: %s", err.Error())
+			return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
+		}
+		defer tx.Rollback()
+
+		if err := uc.repo.RevokeRefreshToken(ctx, parsedUserID, refreshToken, tx); err != nil {
+			uc.log.Printf("[ERROR] repo.RevokeRefreshToken: %s", err.Error())
+			return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
+		}
+
+		refreshToken, err = token.GenerateRefreshToken(parsedUserID.String())
+		if err != nil {
+			uc.log.Printf("[ERROR] token.GenerateRefreshToken: %s", err.Error())
+			return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
+		}
+
+		if err := uc.repo.InsertRefreshToken(ctx, domain.RefreshToken{
+			UserID:     parsedUserID,
+			Token:      refreshToken,
+			ExpiresAt:  time.Now().Add(7 * 24 * time.Hour),
+			DeviceInfo: "",
+			IPAddress:  remoteAddr,
+		}, tx); err != nil {
+			uc.log.Printf("[ERROR] repo.InsertRefreshToken: %s", err.Error())
+			return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
+		}
+
+		if err := tx.Commit(); err != nil {
+			uc.log.Printf("[ERROR] commit transaction: %s", err.Error())
+			return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
+		}
+	}
 
 	newAccessToken, err := token.GenerateAccessToken(claims.UserID)
 	if err != nil {
 		uc.log.Printf("[ERROR] token.GenerateAccessToken: %s", err.Error())
-		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", map[string]any{
