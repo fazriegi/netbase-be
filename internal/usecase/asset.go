@@ -23,6 +23,8 @@ type assetUsecase struct {
 type AssetUsecase interface {
 	ListAsset(ctx context.Context, req *domain.ListAssetRequest) (resp pkg.Response)
 	ListAssetCategory(ctx context.Context) (resp pkg.Response)
+	GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Response)
+	Delete(ctx context.Context, id uuid.UUID) (resp pkg.Response)
 }
 
 func NewAssetUsecase(db *sqlx.DB, log *log.Logger, repo repository.AssetRepository) AssetUsecase {
@@ -75,4 +77,32 @@ func (u *assetUsecase) ListAssetCategory(ctx context.Context) (resp pkg.Response
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", categories, nil)
+}
+
+func (u *assetUsecase) GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	asset, err := u.repo.GetByID(ctx, id, userId, u.db)
+	if err != nil {
+		if err.Error() != constant.ErrNotFound {
+			u.log.Printf("[ERROR] repo.GetByID: %s", err.Error())
+			return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+		}
+
+		return pkg.NewResponse(http.StatusNotFound, constant.ErrNotFound, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", asset, nil)
+}
+
+func (u *assetUsecase) Delete(ctx context.Context, id uuid.UUID) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	err := u.repo.Delete(ctx, id, userId, u.db)
+	if err != nil {
+		u.log.Printf("[ERROR] repo.Delete: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
 }

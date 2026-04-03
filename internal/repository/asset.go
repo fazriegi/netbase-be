@@ -2,11 +2,14 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/fazriegi/fintrack-be/internal/domain"
 	"github.com/fazriegi/fintrack-be/pkg"
+	"github.com/fazriegi/fintrack-be/pkg/constant"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
@@ -16,6 +19,8 @@ type assetRepository struct{}
 type AssetRepository interface {
 	ListAsset(ctx context.Context, req *domain.ListAssetRequest, db *sqlx.DB) (*[]domain.Asset, int, error)
 	ListCategory(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (*[]domain.Category, error)
+	GetByID(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) (*domain.Asset, error)
+	Delete(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) error
 }
 
 func NewAssetRepository() AssetRepository {
@@ -120,4 +125,27 @@ func (r *assetRepository) ListCategory(ctx context.Context, userId uuid.UUID, db
 	err := db.SelectContext(ctx, &categories, query, userId)
 
 	return &categories, err
+}
+
+func (r *assetRepository) GetByID(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) (*domain.Asset, error) {
+	var asset domain.Asset
+	query := `
+		SELECT assets.id, assets.user_id, assets.category_id, assets.name, assets.current_value, assets.details, assets.is_active, ac."name" as category, 
+			ac.base_type as category_type
+		FROM assets 
+		JOIN asset_categories ac ON assets.user_id = ac.user_id AND assets.category_id = ac.id
+		WHERE assets.id = $1 AND assets.user_id = $2`
+	err := db.GetContext(ctx, &asset, query, id, userId)
+	if err == sql.ErrNoRows {
+		return nil, errors.New(constant.ErrNotFound)
+	}
+
+	return &asset, err
+}
+
+func (r *assetRepository) Delete(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) error {
+	query := `DELETE FROM assets WHERE id = $1 AND user_id = $2`
+	_, err := db.ExecContext(ctx, query, id, userId)
+
+	return err
 }
