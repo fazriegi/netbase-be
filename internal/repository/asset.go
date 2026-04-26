@@ -160,7 +160,7 @@ func (r *assetRepository) Insert(ctx context.Context, data *domain.AssetDB, db *
 }
 
 func (r *assetRepository) Update(ctx context.Context, data *domain.AssetDB, db *sqlx.DB) error {
-	query := `UPDATE assets SET name = :name, category_id = :category_id, current_value = :current_value, details = :details, is_active = :is_active WHERE id = :id AND user_id = :user_id`
+	query := `UPDATE assets SET name = :name, category_id = :category_id, current_value = :current_value, details = :details, is_active = :is_active, updated_at = now() WHERE id = :id AND user_id = :user_id`
 	_, err := db.NamedExecContext(ctx, query, data)
 
 	return err
