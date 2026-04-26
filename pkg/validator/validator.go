@@ -56,7 +56,7 @@ func password(fl validator.FieldLevel) bool {
 		hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
 		hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
 
-		return hasDigit && hasSpecialChar && hasLower && hasUpper && len(password) > 8
+		return hasDigit && hasSpecialChar && hasLower && hasUpper && len(password) >= 8
 	}
 
 	return true
