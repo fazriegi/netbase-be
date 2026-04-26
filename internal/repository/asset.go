@@ -28,7 +28,7 @@ func NewAssetRepository() AssetRepository {
 }
 
 func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRequest, db *sqlx.DB) (*[]domain.Asset, int, error) {
-	var assets []domain.Asset
+	var assets = make([]domain.Asset, 0)
 	var total int
 	query := `
 		SELECT assets.id, assets.user_id, ac.name as category, assets.name, assets.current_value, assets.details, assets.is_active 
@@ -120,7 +120,7 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 }
 
 func (r *assetRepository) ListCategory(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (*[]domain.Category, error) {
-	var categories []domain.Category
+	var categories = make([]domain.Category, 0)
 	query := `SELECT id, name, base_type FROM asset_categories WHERE user_id = $1 ORDER BY name ASC`
 	err := db.SelectContext(ctx, &categories, query, userId)
 
