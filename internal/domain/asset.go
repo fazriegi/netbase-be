@@ -37,3 +37,14 @@ type ListAssetResponse struct {
 type ListAssetCategoryResponse struct {
 	Categories *[]Category `json:"categories"`
 }
+
+type GetAssetByIDResponse struct {
+	ID           uuid.UUID       `json:"id"`
+	CategoryID   uuid.UUID       `json:"category_id"`
+	Category     string          `json:"category"`
+	CategoryType string          `json:"category_type"`
+	Name         string          `json:"name"`
+	CurrentValue decimal.Decimal `json:"current_value"`
+	Details      any             `json:"details"`
+	IsActive     bool            `json:"is_active"`
+}

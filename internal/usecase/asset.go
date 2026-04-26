@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"math"
 	"net/http"
@@ -106,7 +107,34 @@ func (u *assetUsecase) GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Resp
 		return pkg.NewResponse(http.StatusNotFound, constant.ErrNotFound, nil, nil)
 	}
 
-	return pkg.NewResponse(http.StatusOK, "Success", asset, nil)
+	dataResponse := domain.GetAssetByIDResponse{
+		ID:           asset.ID,
+		CategoryID:   asset.CategoryID,
+		Category:     asset.Category,
+		CategoryType: asset.CategoryType,
+		Name:         asset.Name,
+		IsActive:     asset.IsActive,
+		CurrentValue: asset.CurrentValue,
+	}
+
+	if asset.Details != nil {
+		var detailsBytes []byte
+		switch v := asset.Details.(type) {
+		case []byte:
+			detailsBytes = v
+		case string:
+			detailsBytes = []byte(v)
+		}
+
+		if len(detailsBytes) > 0 {
+			var parsedDetails any
+			if err := json.Unmarshal(detailsBytes, &parsedDetails); err == nil {
+				dataResponse.Details = parsedDetails
+			}
+		}
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)
 }
 
 func (u *assetUsecase) Delete(ctx context.Context, id uuid.UUID) (resp pkg.Response) {
