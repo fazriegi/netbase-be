@@ -21,6 +21,7 @@ type AssetRepository interface {
 	ListCategory(ctx context.Context, userId uuid.UUID, db *sqlx.DB) (*[]domain.Category, error)
 	GetByID(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) (*domain.Asset, error)
 	Delete(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) error
+	Insert(ctx context.Context, data *domain.AssetDB, db *sqlx.DB) error
 }
 
 func NewAssetRepository() AssetRepository {
@@ -146,6 +147,13 @@ func (r *assetRepository) GetByID(ctx context.Context, id, userId uuid.UUID, db 
 func (r *assetRepository) Delete(ctx context.Context, id, userId uuid.UUID, db *sqlx.DB) error {
 	query := `DELETE FROM assets WHERE id = $1 AND user_id = $2`
 	_, err := db.ExecContext(ctx, query, id, userId)
+
+	return err
+}
+
+func (r *assetRepository) Insert(ctx context.Context, data *domain.AssetDB, db *sqlx.DB) error {
+	query := `INSERT INTO assets (user_id, category_id, name, current_value, details, is_active) VALUES (:user_id, :category_id, :name, :current_value, :details, :is_active)`
+	_, err := db.NamedExecContext(ctx, query, data)
 
 	return err
 }

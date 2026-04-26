@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/fazriegi/fintrack-be/internal/usecase"
 	"github.com/fazriegi/fintrack-be/pkg"
 	"github.com/fazriegi/fintrack-be/pkg/constant"
+	"github.com/fazriegi/fintrack-be/pkg/validator"
 	"github.com/google/uuid"
 )
 
@@ -27,6 +29,7 @@ func NewAssetHandler(mux *http.ServeMux, uc usecase.AssetUsecase, logger *log.Lo
 	mux.Handle("GET /v1/assets/categories", middleware.MiddlewareAuth(http.HandlerFunc(handler.ListAssetCategory)))
 	mux.Handle("GET /v1/assets/{id}", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetByID)))
 	mux.Handle("DELETE /v1/assets/{id}", middleware.MiddlewareAuth(http.HandlerFunc(handler.Delete)))
+	mux.Handle("POST /v1/assets", middleware.MiddlewareAuth(http.HandlerFunc(handler.Create)))
 }
 
 func (h *AssetHandler) ListAsset(w http.ResponseWriter, r *http.Request) {
@@ -72,4 +75,27 @@ func (h *AssetHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.usecase.Delete(r.Context(), parsedID).HTTP(w)
+}
+
+func (h *AssetHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var req domain.CreateAsset
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		pkg.NewResponse(http.StatusBadRequest, constant.ErrInvalidJson, nil, nil).HTTP(w)
+		return
+	}
+
+	// validation
+	validationErr := validator.ValidateRequest(&req)
+	if len(validationErr) > 0 {
+		errResponse := map[string]any{
+			"errors": validationErr,
+		}
+
+		pkg.NewResponse(http.StatusUnprocessableEntity, constant.ErrValidation, errResponse, nil).HTTP(w)
+		return
+	}
+
+	response := h.usecase.Create(r.Context(), &req)
+	response.HTTP(w)
 }

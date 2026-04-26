@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"time"
+
 	"github.com/fazriegi/fintrack-be/pkg"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -16,6 +18,18 @@ type Asset struct {
 	CurrentValue decimal.Decimal `db:"current_value" json:"current_value"`
 	Details      any             `db:"details" json:"details"`
 	IsActive     bool            `db:"is_active" json:"is_active"`
+}
+
+type AssetDB struct {
+	ID           uuid.UUID       `db:"id"`
+	UserId       uuid.UUID       `db:"user_id"`
+	CategoryID   uuid.UUID       `db:"category_id"`
+	Name         string          `db:"name"`
+	CurrentValue decimal.Decimal `db:"current_value"`
+	Details      any             `db:"details"`
+	IsActive     bool            `db:"is_active"`
+	CreatedAt    time.Time       `db:"created_at"`
+	UpdatedAt    time.Time       `db:"updated_at"`
 }
 
 type ListAssetRequest struct {
@@ -47,4 +61,14 @@ type GetAssetByIDResponse struct {
 	CurrentValue decimal.Decimal `json:"current_value"`
 	Details      any             `json:"details"`
 	IsActive     bool            `json:"is_active"`
+}
+
+type CreateAsset struct {
+	UserId       uuid.UUID
+	Name         string          `json:"name" validate:"required"`
+	CategoryID   uuid.UUID       `json:"category_id" validate:"required"`
+	CurrentValue *decimal.Decimal `json:"current_value" validate:"required"`
+	Details      any              `json:"details" validate:"required"`
+	IsActive     *bool            `json:"is_active" validate:"required"`
+	CategoryType string           `json:"category_type" validate:"required"`
 }

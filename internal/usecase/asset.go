@@ -26,6 +26,7 @@ type AssetUsecase interface {
 	ListAssetCategory(ctx context.Context) (resp pkg.Response)
 	GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Response)
 	Delete(ctx context.Context, id uuid.UUID) (resp pkg.Response)
+	Create(ctx context.Context, req *domain.CreateAsset) (resp pkg.Response)
 }
 
 func NewAssetUsecase(db *sqlx.DB, log *log.Logger, repo repository.AssetRepository) AssetUsecase {
@@ -147,4 +148,36 @@ func (u *assetUsecase) Delete(ctx context.Context, id uuid.UUID) (resp pkg.Respo
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
+}
+
+func (u *assetUsecase) Create(ctx context.Context, req *domain.CreateAsset) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+	req.UserId = userId
+
+	var detailsDB any
+	if req.Details != nil {
+		b, err := json.Marshal(req.Details)
+		if err != nil {
+			u.log.Printf("[ERROR] json.Marshal req.Details: %s", err.Error())
+			return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+		}
+		detailsDB = b
+	}
+
+	assetDB := &domain.AssetDB{
+		UserId:       userId,
+		CategoryID:   req.CategoryID,
+		Name:         req.Name,
+		CurrentValue: *req.CurrentValue,
+		Details:      detailsDB,
+		IsActive:     *req.IsActive,
+	}
+
+	err := u.repo.Insert(ctx, assetDB, u.db)
+	if err != nil {
+		u.log.Printf("[ERROR] repo.Insert: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusCreated, "Success", nil, nil)
 }
