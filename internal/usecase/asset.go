@@ -41,6 +41,20 @@ func (u *assetUsecase) ListAsset(ctx context.Context, req *domain.ListAssetReque
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
+	dataResponse := make([]domain.ListAssetResponse, 0)
+
+	if assets != nil {
+		for _, asset := range *assets {
+			dataResponse = append(dataResponse, domain.ListAssetResponse{
+				ID:           asset.ID,
+				Category:     asset.Category,
+				Name:         asset.Name,
+				CurrentValue: asset.CurrentValue,
+				IsActive:     asset.IsActive,
+			})
+		}
+	}
+
 	var paginationMeta pkg.PaginationMeta
 	if req.Limit != nil && *req.Limit > 0 {
 		limit := int(*req.Limit)
@@ -64,7 +78,7 @@ func (u *assetUsecase) ListAsset(ctx context.Context, req *domain.ListAssetReque
 		}
 	}
 
-	return pkg.NewResponse(http.StatusOK, "Success", assets, &paginationMeta)
+	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, &paginationMeta)
 }
 
 func (u *assetUsecase) ListAssetCategory(ctx context.Context) (resp pkg.Response) {
