@@ -48,6 +48,12 @@ func (h *LiabilityHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// validation
 	validationErr := validator.ValidateRequest(&req)
+
+	detailValidationErr := validateLiabilityDetails(req.CategoryType, req.Details)
+	if len(detailValidationErr) > 0 {
+		validationErr = append(validationErr, detailValidationErr...)
+	}
+
 	if len(validationErr) > 0 {
 		errResponse := map[string]any{
 			"errors": validationErr,
@@ -107,6 +113,12 @@ func (h *LiabilityHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// validation
 	validationErr := validator.ValidateRequest(&req)
+
+	detailValidationErr := validateLiabilityDetails(req.CategoryType, req.Details)
+	if len(detailValidationErr) > 0 {
+		validationErr = append(validationErr, detailValidationErr...)
+	}
+
 	if len(validationErr) > 0 {
 		errResponse := map[string]any{
 			"errors": validationErr,
@@ -132,4 +144,52 @@ func (h *LiabilityHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.usecase.Delete(r.Context(), parsedID).HTTP(w)
+}
+
+func validateLiabilityDetails(categoryType string, details any) []validator.ValidationErrResponse {
+	var detailErrors []validator.ValidationErrResponse
+
+	detailsBytes, err := json.Marshal(details)
+	if err != nil {
+		return append(detailErrors, validator.ValidationErrResponse{
+			FailedField: "details",
+			Tag:         "invalid_format",
+			TagValue:    "",
+		})
+	}
+
+	switch categoryType {
+	case "short_term":
+		var detail domain.ShortTermLiability
+		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			return append(detailErrors, validator.ValidationErrResponse{
+				FailedField: "details",
+				Tag:         "invalid_format",
+				TagValue:    "",
+			})
+		}
+		detailErrors = validator.ValidateRequest(&detail)
+	case "long_term":
+		var detail domain.LongTermLiability
+		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			return append(detailErrors, validator.ValidationErrResponse{
+				FailedField: "details",
+				Tag:         "invalid_format",
+				TagValue:    "",
+			})
+		}
+		detailErrors = validator.ValidateRequest(&detail)
+	default:
+		detailErrors = append(detailErrors, validator.ValidationErrResponse{
+			FailedField: "category_type",
+			Tag:         "invalid",
+			TagValue:    categoryType,
+		})
+	}
+
+	for i := range detailErrors {
+		detailErrors[i].FailedField = "details." + detailErrors[i].FailedField
+	}
+
+	return detailErrors
 }
