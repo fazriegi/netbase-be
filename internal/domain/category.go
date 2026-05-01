@@ -15,22 +15,22 @@ type Category struct {
 }
 
 type LiquidAsset struct {
-	PlatformName   string          `json:"platform_name"`
+	PlatformName   string          `json:"platform_name" validate:"required"`
 	AccountName    string          `json:"account_name"`
 	AccountNumber  string          `json:"account_number"`
 	InterestRatePA decimal.Decimal `json:"interest_rate_pa"`
 }
 
 type InvestmentAsset struct {
-	PlatformName string          `json:"platform_name"`
-	TickerSymbol string          `json:"ticker_symbol"`
-	AveragePrice decimal.Decimal `json:"average_price"`
-	Quantity     decimal.Decimal `json:"quantity"`
+	PlatformName string          `json:"platform_name" validate:"required"`
+	TickerSymbol string          `json:"ticker_symbol" validate:"required"`
+	AveragePrice decimal.Decimal `json:"average_price" validate:"required"`
+	Quantity     decimal.Decimal `json:"quantity" validate:"required"`
 }
 
 type PhysicalAsset struct {
-	Model         string          `json:"model"`
-	PurchaseYear  int             `json:"purchase_year"`
+	Model         string          `json:"model" validate:"required"`
+	PurchaseYear  int             `json:"purchase_year" validate:"required"`
 	PurchasePrice decimal.Decimal `json:"purchase_price"`
 }
 

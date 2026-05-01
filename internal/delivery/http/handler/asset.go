@@ -88,6 +88,12 @@ func (h *AssetHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// validation
 	validationErr := validator.ValidateRequest(&req)
+
+	detailValidationErr := validateAssetDetails(req.CategoryType, req.Details)
+	if len(detailValidationErr) > 0 {
+		validationErr = append(validationErr, detailValidationErr...)
+	}
+
 	if len(validationErr) > 0 {
 		errResponse := map[string]any{
 			"errors": validationErr,
@@ -120,6 +126,12 @@ func (h *AssetHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// validation
 	validationErr := validator.ValidateRequest(&req)
+
+	detailValidationErr := validateAssetDetails(req.CategoryType, req.Details)
+	if len(detailValidationErr) > 0 {
+		validationErr = append(validationErr, detailValidationErr...)
+	}
+
 	if len(validationErr) > 0 {
 		errResponse := map[string]any{
 			"errors": validationErr,
@@ -132,4 +144,62 @@ func (h *AssetHandler) Update(w http.ResponseWriter, r *http.Request) {
 	req.ID = parsedID
 
 	h.usecase.Update(r.Context(), &req).HTTP(w)
+}
+
+func validateAssetDetails(categoryType string, details any) []validator.ValidationErrResponse {
+	var detailErrors []validator.ValidationErrResponse
+
+	detailsBytes, err := json.Marshal(details)
+	if err != nil {
+		return append(detailErrors, validator.ValidationErrResponse{
+			FailedField: "details",
+			Tag:         "invalid_format",
+			TagValue:    "",
+		})
+	}
+
+	switch categoryType {
+	case "liquid":
+		var detail domain.LiquidAsset
+		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			return append(detailErrors, validator.ValidationErrResponse{
+				FailedField: "details",
+				Tag:         "invalid_format",
+				TagValue:    "",
+			})
+		}
+		detailErrors = validator.ValidateRequest(&detail)
+	case "investment":
+		var detail domain.InvestmentAsset
+		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			return append(detailErrors, validator.ValidationErrResponse{
+				FailedField: "details",
+				Tag:         "invalid_format",
+				TagValue:    "",
+			})
+		}
+		detailErrors = validator.ValidateRequest(&detail)
+	case "physical":
+		var detail domain.PhysicalAsset
+		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			return append(detailErrors, validator.ValidationErrResponse{
+				FailedField: "details",
+				Tag:         "invalid_format",
+				TagValue:    "",
+			})
+		}
+		detailErrors = validator.ValidateRequest(&detail)
+	default:
+		detailErrors = append(detailErrors, validator.ValidationErrResponse{
+			FailedField: "category_type",
+			Tag:         "invalid",
+			TagValue:    categoryType,
+		})
+	}
+
+	for i := range detailErrors {
+		detailErrors[i].FailedField = "details." + detailErrors[i].FailedField
+	}
+
+	return detailErrors
 }
