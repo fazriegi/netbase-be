@@ -112,6 +112,7 @@ CREATE TABLE net_worth_histories (
     -- Fitur PostgreSQL yang otomatis ngurangin aset - liabilitas
     net_worth DECIMAL(15, 2) GENERATED ALWAYS AS (total_assets - total_liabilities) STORED,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, recorded_date)
 );
 
