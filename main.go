@@ -36,9 +36,7 @@ func main() {
 	db := database.ConnectPostgres(appLogger)
 	defer db.Close()
 
-	go func() {
-		cron.RefreshTokenCleanup(db, appLogger)
-	}()
+	cron.Start(db, appLogger)
 
 	port := os.Getenv("PORT")
 	if port == "" {

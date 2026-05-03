@@ -10,10 +10,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func RefreshTokenCleanup(db *sqlx.DB, appLogger *log.Logger) {
+func RefreshTokenCleanup(db *sqlx.DB, userRepo repository.UserRepository, appLogger *log.Logger) {
 	s := gocron.NewScheduler(time.Local)
-
-	userRepo := repository.NewUserRepository()
 
 	s.Every(1).Day().Do(func() {
 		err := userRepo.RemoveExpiredToken(context.Background(), nil, db)
