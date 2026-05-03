@@ -67,7 +67,6 @@ CREATE TABLE liabilities (
     principal_amount DECIMAL(15, 2) NOT NULL, -- Total pinjaman awal
     remaining_balance DECIMAL(15, 2) NOT NULL, -- Sisa utang saat ini (pengurang Net Worth)
     details JSONB, -- Simpan metadata utang (bunga, tenor, tanggal jatuh tempo)
-    is_active BOOLEAN DEFAULT TRUE, -- Kalau utang lunas, set false
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
