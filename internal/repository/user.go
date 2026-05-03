@@ -142,7 +142,7 @@ func (r *userRepo) SeedDefaultCategories(ctx context.Context, tx *sqlx.Tx, userI
 		{UserID: userID, Name: "Savings", BaseType: "liquid"},
 		{UserID: userID, Name: "Bond", BaseType: "investment"},
 		{UserID: userID, Name: "Crypto", BaseType: "investment"},
-		{UserID: userID, Name: "Gold", BaseType: "investment"},
+		{UserID: userID, Name: "Gold", BaseType: "physical"},
 		{UserID: userID, Name: "Mutual Fund", BaseType: "investment"},
 		{UserID: userID, Name: "Stock", BaseType: "investment"},
 		{UserID: userID, Name: "Electronics", BaseType: "physical"},
