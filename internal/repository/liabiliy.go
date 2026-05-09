@@ -70,6 +70,7 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 
 		if err != nil {
 			errChan <- fmt.Errorf("error counting data: %v", err)
+			return
 		}
 
 		defer resCount.Close()
@@ -78,6 +79,7 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 			err = resCount.Scan(&total)
 			if err != nil {
 				errChan <- fmt.Errorf("error scanning count: %v", err)
+				return
 			}
 		}
 	}()
@@ -95,6 +97,7 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 
 		if err != nil {
 			errChan <- fmt.Errorf("error fetching data: %v", err)
+			return
 		}
 
 		defer res.Close()

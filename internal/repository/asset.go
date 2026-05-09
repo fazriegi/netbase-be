@@ -70,6 +70,7 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 
 		if err != nil {
 			errChan <- fmt.Errorf("error counting data: %v", err)
+			return
 		}
 
 		defer resCount.Close()
@@ -78,6 +79,7 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 			err = resCount.Scan(&total)
 			if err != nil {
 				errChan <- fmt.Errorf("error scanning count: %v", err)
+				return
 			}
 		}
 	}()
@@ -96,6 +98,7 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 
 		if err != nil {
 			errChan <- fmt.Errorf("error fetching data: %v", err)
+			return
 		}
 
 		defer res.Close()
