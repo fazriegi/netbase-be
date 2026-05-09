@@ -18,6 +18,7 @@ type Asset struct {
 	CurrentValue decimal.Decimal `db:"current_value" json:"current_value"`
 	Details      any             `db:"details" json:"details"`
 	IsActive     bool            `db:"is_active" json:"is_active"`
+	CreatedAt    time.Time       `db:"created_at" json:"-"`
 }
 
 type AssetDB struct {

@@ -30,6 +30,7 @@ type Liability struct {
 	RemainingBalance decimal.Decimal `db:"remaining_balance" json:"remaining_balance"`
 	PrincipalAmount  decimal.Decimal `db:"principal_amount" json:"principal_amount"`
 	Details          any             `db:"details" json:"details"`
+	CreatedAt        time.Time       `db:"created_at" json:"-"`
 }
 
 type CreateLiability struct {

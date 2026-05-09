@@ -40,8 +40,10 @@ func (r *liabilityRepository) ListCategory(ctx context.Context, userId uuid.UUID
 func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilityRequest, db *sqlx.DB) (*[]domain.Liability, int, error) {
 	var liabilities = make([]domain.Liability, 0)
 	var total int
+	var defaultSort = "created_at desc"
 	query := `
-		SELECT liabilities.id, liabilities.user_id, lc.name as category, liabilities.name, liabilities.remaining_balance, liabilities.details 
+		SELECT liabilities.id, liabilities.user_id, lc.name as category, liabilities.name, liabilities.remaining_balance, liabilities.details,
+			liabilities.created_at
 		FROM liabilities 
 		join liability_categories lc on lc.id = liabilities.category_id and lc.user_id = liabilities.user_id
 		WHERE liabilities.user_id = :user_id
@@ -53,6 +55,10 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 
 	if req.Category != "" {
 		query += ` AND lc.name ILIKE :category`
+	}
+
+	if req.Sort == nil {
+		req.Sort = &defaultSort
 	}
 
 	var wg sync.WaitGroup

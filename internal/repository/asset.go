@@ -35,8 +35,10 @@ func NewAssetRepository() AssetRepository {
 func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRequest, db *sqlx.DB) (*[]domain.Asset, int, error) {
 	var assets = make([]domain.Asset, 0)
 	var total int
+	var defaultSort = "created_at desc"
 	query := `
-		SELECT assets.id, assets.user_id, ac.name as category, assets.name, assets.current_value, assets.details, assets.is_active 
+		SELECT assets.id, assets.user_id, ac.name as category, assets.name, assets.current_value, assets.details, assets.is_active,
+			assets.created_at
 		FROM assets 
 		join asset_categories ac on ac.id = assets.category_id and ac.user_id = assets.user_id
 		WHERE assets.user_id = :user_id
@@ -52,6 +54,10 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 
 	if req.IsActive != nil {
 		query += ` AND assets.is_active = :is_active`
+	}
+
+	if req.Sort == nil {
+		req.Sort = &defaultSort
 	}
 
 	var wg sync.WaitGroup
