@@ -54,8 +54,10 @@ type ListTransactionRequest struct {
 	UserID       uuid.UUID
 	CategoryName string `query:"category_name"`
 	Notes        string `query:"notes"`
-	FilterType   string `query:"filter_type"` // "week", "month", "year"
+	FilterType   string `query:"filter_type"` // "week", "month", "year", "range"
 	DateStr      string `query:"date"`        // reference date YYYY-MM-DD
+	StartDateStr string `query:"start_date"`  // range start date YYYY-MM-DD
+	EndDateStr   string `query:"end_date"`    // range end date YYYY-MM-DD
 }
 
 type ListTransactionResponse struct {

@@ -123,12 +123,15 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 		query += ` AND transactions.notes ILIKE :notes`
 	}
 
-	if req.FilterType == "week" {
+	switch req.FilterType {
+	case "week":
 		query += ` AND DATE_TRUNC('week', transactions.transaction_date) = DATE_TRUNC('week', CAST(:ref_date AS date))`
-	} else if req.FilterType == "month" {
+	case "month":
 		query += ` AND DATE_TRUNC('month', transactions.transaction_date) = DATE_TRUNC('month', CAST(:ref_date AS date))`
-	} else if req.FilterType == "year" {
+	case "year":
 		query += ` AND DATE_TRUNC('year', transactions.transaction_date) = DATE_TRUNC('year', CAST(:ref_date AS date))`
+	case "range":
+		query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
 	}
 
 	if req.Sort == nil {
@@ -145,6 +148,8 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 		"category_name": "%" + req.CategoryName + "%",
 		"notes":         "%" + req.Notes + "%",
 		"ref_date":      refDate,
+		"start_date":    req.StartDateStr,
+		"end_date":      req.EndDateStr,
 	}
 	go func() {
 		defer wg.Done()
