@@ -26,6 +26,7 @@ func NewTransactionHandler(mux *http.ServeMux, uc usecase.TransactionUsecase, lo
 	}
 
 	mux.Handle("GET /v1/transactions", middleware.MiddlewareAuth(http.HandlerFunc(h.List)))
+	mux.Handle("GET /v1/transactions/summary", middleware.MiddlewareAuth(http.HandlerFunc(h.GetSummary)))
 	mux.Handle("GET /v1/transactions/{id}", middleware.MiddlewareAuth(http.HandlerFunc(h.GetByID)))
 	mux.Handle("POST /v1/transactions", middleware.MiddlewareAuth(http.HandlerFunc(h.Create)))
 	mux.Handle("PUT /v1/transactions/{id}", middleware.MiddlewareAuth(http.HandlerFunc(h.Update)))
@@ -46,6 +47,18 @@ func (h *TransactionHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.usecase.List(r.Context(), &req).HTTP(w)
+}
+
+func (h *TransactionHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
+	var req domain.ListTransactionRequest
+
+	if err := pkg.ParseQueryParam(r, &req); err != nil {
+		h.logger.Printf("[ERROR] parsing query params: %s", err.Error())
+		pkg.NewResponse(http.StatusBadRequest, constant.ErrParseQueryParam, nil, nil).HTTP(w)
+		return
+	}
+
+	h.usecase.GetSummary(r.Context(), &req).HTTP(w)
 }
 
 func (h *TransactionHandler) GetByID(w http.ResponseWriter, r *http.Request) {

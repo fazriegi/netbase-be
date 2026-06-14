@@ -80,6 +80,30 @@ func (r *transactionRepository) DeleteCategory(ctx context.Context, id, userID u
 	return err
 }
 
+func (r *transactionRepository) transactionFilter(req *domain.ListTransactionRequest) string {
+	var query string
+	if req.CategoryName != "" {
+		query += ` AND tc.name ILIKE :category_name`
+	}
+
+	if req.Notes != "" {
+		query += ` AND transactions.notes ILIKE :notes`
+	}
+
+	switch req.FilterType {
+	case "week":
+		query += ` AND DATE_TRUNC('week', transactions.transaction_date) = DATE_TRUNC('week', CAST(:ref_date AS date))`
+	case "month":
+		query += ` AND DATE_TRUNC('month', transactions.transaction_date) = DATE_TRUNC('month', CAST(:ref_date AS date))`
+	case "year":
+		query += ` AND DATE_TRUNC('year', transactions.transaction_date) = DATE_TRUNC('year', CAST(:ref_date AS date))`
+	case "range":
+		query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
+	}
+
+	return query
+}
+
 func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransactionRequest) (*[]domain.Transaction, int, error) {
 	db := getQueryer(ctx, r.db)
 	var transactions = make([]domain.Transaction, 0)
@@ -115,24 +139,7 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 		refDate = time.Now().Format("2006-01-02")
 	}
 
-	if req.CategoryName != "" {
-		query += ` AND tc.name ILIKE :category_name`
-	}
-
-	if req.Notes != "" {
-		query += ` AND transactions.notes ILIKE :notes`
-	}
-
-	switch req.FilterType {
-	case "week":
-		query += ` AND DATE_TRUNC('week', transactions.transaction_date) = DATE_TRUNC('week', CAST(:ref_date AS date))`
-	case "month":
-		query += ` AND DATE_TRUNC('month', transactions.transaction_date) = DATE_TRUNC('month', CAST(:ref_date AS date))`
-	case "year":
-		query += ` AND DATE_TRUNC('year', transactions.transaction_date) = DATE_TRUNC('year', CAST(:ref_date AS date))`
-	case "range":
-		query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
-	}
+	query += r.transactionFilter(req)
 
 	if req.Sort == nil {
 		req.Sort = &defaultSort
@@ -207,6 +214,51 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 	}
 
 	return &transactions, total, nil
+}
+
+func (r *transactionRepository) GetSummary(ctx context.Context, req *domain.ListTransactionRequest) (*domain.TransactionSummary, error) {
+	db := getQueryer(ctx, r.db)
+
+	query := `
+		SELECT 
+			COALESCE(SUM(CASE WHEN tc.base_type = 'income' THEN transactions.amount ELSE 0 END), 0) as income,
+			COALESCE(SUM(CASE WHEN tc.base_type = 'expense' THEN transactions.amount ELSE 0 END), 0) as expense
+		FROM transactions 
+		JOIN transaction_categories tc ON tc.id = transactions.category_id AND tc.user_id = transactions.user_id
+		WHERE transactions.user_id = :user_id
+	`
+
+	var refDate string
+	if req.DateStr != "" {
+		refDate = req.DateStr
+	} else {
+		refDate = time.Now().Format("2006-01-02")
+	}
+
+	query += r.transactionFilter(req)
+
+	rows, err := db.NamedQueryContext(ctx, query, map[string]interface{}{
+		"user_id":       req.UserID,
+		"category_name": "%" + req.CategoryName + "%",
+		"notes":         "%" + req.Notes + "%",
+		"ref_date":      refDate,
+		"start_date":    req.StartDateStr,
+		"end_date":      req.EndDateStr,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var summary domain.TransactionSummary
+	if rows.Next() {
+		if err := rows.Scan(&summary.Income, &summary.Expense); err != nil {
+			return nil, err
+		}
+	}
+	summary.Net = summary.Income.Sub(summary.Expense)
+
+	return &summary, nil
 }
 
 func (r *transactionRepository) GetByID(ctx context.Context, id, userID uuid.UUID) (*domain.Transaction, error) {

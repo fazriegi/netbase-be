@@ -29,6 +29,7 @@ type TransactionUsecase interface {
 	CreateCategory(ctx context.Context, req *domain.Category) (resp pkg.Response)
 	DeleteCategory(ctx context.Context, id uuid.UUID) (resp pkg.Response)
 	List(ctx context.Context, req *domain.ListTransactionRequest) (resp pkg.Response)
+	GetSummary(ctx context.Context, req *domain.ListTransactionRequest) (resp pkg.Response)
 	GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Response)
 	Create(ctx context.Context, req *domain.CreateTransaction) (resp pkg.Response)
 	Update(ctx context.Context, req *domain.CreateTransaction) (resp pkg.Response)
@@ -139,6 +140,19 @@ func (u *transactionUsecase) List(ctx context.Context, req *domain.ListTransacti
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, &paginationMeta)
+}
+
+func (u *transactionUsecase) GetSummary(ctx context.Context, req *domain.ListTransactionRequest) (resp pkg.Response) {
+	userID := ctx.Value("user_id").(uuid.UUID)
+	req.UserID = userID
+
+	summary, err := u.repo.GetSummary(ctx, req)
+	if err != nil {
+		u.log.Printf("[ERROR] repo.GetSummary: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", summary, nil)
 }
 
 func (u *transactionUsecase) GetByID(ctx context.Context, id uuid.UUID) (resp pkg.Response) {

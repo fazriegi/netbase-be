@@ -74,6 +74,12 @@ type ListTransactionResponse struct {
 	Notes           *string         `json:"notes"`
 }
 
+type TransactionSummary struct {
+	Income  decimal.Decimal `json:"income"`
+	Expense decimal.Decimal `json:"expense"`
+	Net     decimal.Decimal `json:"net"`
+}
+
 type ListCategoryRequest struct {
 	UserID   uuid.UUID
 	BaseType string `query:"base_type"` // "income", "expense"
@@ -86,6 +92,7 @@ type TransactionRepository interface {
 	InsertCategory(ctx context.Context, category *Category) error
 	DeleteCategory(ctx context.Context, id, userID uuid.UUID) error
 	List(ctx context.Context, req *ListTransactionRequest) (*[]Transaction, int, error)
+	GetSummary(ctx context.Context, req *ListTransactionRequest) (*TransactionSummary, error)
 	GetByID(ctx context.Context, id, userID uuid.UUID) (*Transaction, error)
 	Delete(ctx context.Context, id, userID uuid.UUID) error
 	Insert(ctx context.Context, data *TransactionDB) error
