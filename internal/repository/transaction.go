@@ -62,7 +62,7 @@ func (r *transactionRepository) GetCategoryByID(ctx context.Context, id, userID 
 
 func (r *transactionRepository) InsertCategory(ctx context.Context, category *domain.Category) error {
 	db := getQueryer(ctx, r.db)
-	query := `INSERT INTO transaction_categories (user_id, name, base_type) VALUES (:user_id, :name, :base_type)`
+	query := `INSERT INTO transaction_categories (user_id, name, base_type) VALUES (:user_id, :name, :base_type) ON CONFLICT (user_id, name, base_type) DO NOTHING`
 	_, err := db.NamedExecContext(ctx, query, category)
 
 	return err
