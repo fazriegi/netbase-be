@@ -23,17 +23,28 @@ func NewUserRepository(db *sqlx.DB) domain.UserRepository {
 
 func (r *userRepo) Create(ctx context.Context, user *domain.User) (uuid.UUID, error) {
 	db := getQueryer(ctx, r.db)
-	query := `INSERT INTO users (email, password, full_name) VALUES ($1, $2, $3) RETURNING id`
+	query := `INSERT INTO users (username, email, password, full_name) VALUES ($1, $2, $3, $4) RETURNING id`
 	var userId uuid.UUID
-	err := db.QueryRowContext(ctx, query, user.Email, user.Password, user.FullName).Scan(&userId)
+	err := db.QueryRowContext(ctx, query, user.Username, user.Email, user.Password, user.FullName).Scan(&userId)
 	return userId, err
 }
 
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	db := getQueryer(ctx, r.db)
 	var user domain.User
-	query := `SELECT id, email, password, full_name FROM users WHERE email = $1`
+	query := `SELECT id, username, email, password, full_name FROM users WHERE email = $1`
 	err := db.GetContext(ctx, &user, query, email)
+	if err == sql.ErrNoRows {
+		return nil, errors.New(constant.ErrUserNotFound)
+	}
+	return &user, err
+}
+
+func (r *userRepo) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
+	db := getQueryer(ctx, r.db)
+	var user domain.User
+	query := `SELECT id, username, email, password, full_name FROM users WHERE username = $1`
+	err := db.GetContext(ctx, &user, query, username)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrUserNotFound)
 	}
@@ -43,7 +54,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, 
 func (r *userRepo) GetByID(ctx context.Context, userId uuid.UUID) (*domain.User, error) {
 	db := getQueryer(ctx, r.db)
 	var user domain.User
-	query := `SELECT id, email, password, full_name FROM users WHERE id = $1`
+	query := `SELECT id, username, email, password, full_name FROM users WHERE id = $1`
 	err := db.GetContext(ctx, &user, query, userId)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrUserNotFound)

@@ -34,14 +34,14 @@ func NewUserUsecase(log *log.Logger, repo domain.UserRepository, tx domain.Trans
 }
 
 func (uc *userUsecase) Register(ctx context.Context, req *domain.RegisterRequest) pkg.Response {
-	existingUser, err := uc.repo.GetByEmail(ctx, req.Email)
+	existingUser, err := uc.repo.GetByUsername(ctx, req.Username)
 	if err != nil && err.Error() != constant.ErrUserNotFound {
-		uc.log.Printf("[ERROR] repo.GetByEmail: %s", err.Error())
+		uc.log.Printf("[ERROR] repo.GetByUsername: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
 	if existingUser != nil {
-		return pkg.NewResponse(http.StatusBadRequest, constant.ErrEmailExists, nil, nil)
+		return pkg.NewResponse(http.StatusBadRequest, constant.ErrUsernameExists, nil, nil)
 	}
 
 	hash, err := password.Hash(req.Password)
@@ -51,6 +51,7 @@ func (uc *userUsecase) Register(ctx context.Context, req *domain.RegisterRequest
 	}
 
 	user := &domain.User{
+		Username: req.Username,
 		Email:    req.Email,
 		Password: hash,
 		FullName: req.FullName,
@@ -79,9 +80,9 @@ func (uc *userUsecase) Register(ctx context.Context, req *domain.RegisterRequest
 }
 
 func (uc *userUsecase) Login(ctx context.Context, req *domain.LoginRequest) (resp pkg.Response) {
-	user, err := uc.repo.GetByEmail(ctx, req.Email)
+	user, err := uc.repo.GetByUsername(ctx, req.Username)
 	if err != nil {
-		uc.log.Printf("[ERROR] repo.GetByEmail: %s", err.Error())
+		uc.log.Printf("[ERROR] repo.GetByUsername: %s", err.Error())
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidCreds, nil, nil)
 	}
 

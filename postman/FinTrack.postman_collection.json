@@ -16,7 +16,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"full_name\":\"test\",\n    \"email\": \"test23@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
+              "raw": "{\n    \"full_name\":\"test\",\n    \"username\":\"test\",\n    \"email\": \"test23@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -42,7 +42,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"full_name\":\"test\",\n    \"email\": \"test2@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
+                  "raw": "{\n    \"full_name\":\"test\",\n    \"username\":\"test\",\n    \"email\": \"test23@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -103,7 +103,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"full_name\":\"test\",\n    \"email\": \"test2@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
+                  "raw": "{\n    \"full_name\":\"test\",\n    \"username\":\"test\",\n    \"email\": \"test23@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -155,7 +155,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n    \"code\": 400,\n    \"status\": \"Bad Request\",\n    \"message\": \"Email already exists\",\n    \"is_success\": false\n}"
+              "body": "{\n    \"code\": 400,\n    \"status\": \"Bad Request\",\n    \"message\": \"Username already exists\",\n    \"is_success\": false\n}"
             }
           ]
         },
@@ -181,7 +181,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"egi@gmail.com\",\n    \"password\": \"P@ssw0rd\"\n}",
+              "raw": "{\n    \"username\": \"test\",\n    \"password\": \"Test2123@\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -207,7 +207,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test2@gmail.com\",\n    \"password\": \"Test21a3@\"\n}",
+                  "raw": "{\n    \"username\": \"test\",\n    \"password\": \"Test2123@\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -268,7 +268,7 @@
                 "header": [],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test2@gmail.com\",\n    \"password\": \"Test2123@\"\n}",
+                  "raw": "{\n    \"username\": \"test\",\n    \"password\": \"Test2123@\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -296,11 +296,11 @@
                 },
                 {
                   "key": "Set-Cookie",
-                  "value": "access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMDIzM2RiMzItZGNjZS00YTJjLWI1ZTUtNTI5NjIzZWM4N2EwIiwiZXhwIjoxNzc0NzU1Nzg2LCJpYXQiOjE3NzQ3NTQ4ODZ9.xoIlEoWEKfb49TnqO7rFoKNsBioOisBkucl5gDTNByo; Path=/; Expires=Sun, 29 Mar 2026 03:43:06 GMT; HttpOnly; Secure; SameSite=Lax"
+                  "value": "access_token=; Path=/; Expires=Sun, 29 Mar 2026 03:43:06 GMT; HttpOnly; Secure; SameSite=Lax"
                 },
                 {
                   "key": "Set-Cookie",
-                  "value": "refresh_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMDIzM2RiMzItZGNjZS00YTJjLWI1ZTUtNTI5NjIzZWM4N2EwIiwiZXhwIjoxNzc1MzU5Njg2LCJpYXQiOjE3NzQ3NTQ4ODZ9.VRXkznEQu9YDgjfZxNJ-coe6H3xRgBsfq__xnX_ol1o; Path=/; Expires=Sun, 05 Apr 2026 03:28:06 GMT; HttpOnly; Secure; SameSite=Lax"
+                  "value": "refresh_token=; Path=/; Expires=Sun, 05 Apr 2026 03:28:06 GMT; HttpOnly; Secure; SameSite=Lax"
                 },
                 {
                   "key": "Vary",
@@ -400,7 +400,7 @@
                 }
               ],
               "cookie": [],
-              "body": "{\n    \"code\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"is_success\": true,\n    \"data\": {\n        \"id\": \"0233db32-dcce-4a2c-b5e5-529623ec87a0\",\n        \"full_name\": \"test\",\n        \"email\": \"test2@gmail.com\"\n    }\n}"
+              "body": "{\n    \"code\": 200,\n    \"status\": \"OK\",\n    \"message\": \"Success\",\n    \"is_success\": true,\n    \"data\": {\n        \"id\": \"28afd2a1-21a4-4ead-ad86-d1cda095eb32\",\n        \"full_name\": \"test\",\n        \"username\": \"test\",\n        \"email\": \"test23@gmail.com\"\n    }\n}\n"
             },
             {
               "name": "401",

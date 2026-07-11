@@ -11,7 +11,7 @@ var (
 	ErrInvalidToken    = "invalid or expired token"
 	ErrInvalidParam    = "invalid param"
 
-	ErrUserNotFound = "User not found"
-	ErrEmailExists  = "Email already exists"
-	ErrInvalidCreds = "Invalid credentials"
+	ErrUserNotFound   = "User not found"
+	ErrUsernameExists = "Username already exists"
+	ErrInvalidCreds   = "Invalid credentials"
 )
