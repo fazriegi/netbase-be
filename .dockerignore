@@ -1,0 +1,17 @@
+.git
+.gitignore
+bin
+tmp
+log
+*.log
+.env
+.env.example
+.air.toml
+postman
+Dockerfile
+docker-compose.yml
+.dockerignore
+README.md
+readme.md
+Makefile
+db/ERD.png
