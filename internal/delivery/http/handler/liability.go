@@ -49,7 +49,7 @@ func (h *LiabilityHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// validation
 	validationErr := validator.ValidateRequest(&req)
 
-	detailValidationErr := validateLiabilityDetails(req.CategoryType, req.Details)
+	detailValidationErr := h.validateLiabilityDetails(req.CategoryType, req.Details)
 	if len(detailValidationErr) > 0 {
 		validationErr = append(validationErr, detailValidationErr...)
 	}
@@ -114,7 +114,7 @@ func (h *LiabilityHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// validation
 	validationErr := validator.ValidateRequest(&req)
 
-	detailValidationErr := validateLiabilityDetails(req.CategoryType, req.Details)
+	detailValidationErr := h.validateLiabilityDetails(req.CategoryType, req.Details)
 	if len(detailValidationErr) > 0 {
 		validationErr = append(validationErr, detailValidationErr...)
 	}
@@ -146,11 +146,12 @@ func (h *LiabilityHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	h.usecase.Delete(r.Context(), parsedID).HTTP(w)
 }
 
-func validateLiabilityDetails(categoryType string, details any) []validator.ValidationErrResponse {
+func (h *LiabilityHandler) validateLiabilityDetails(categoryType string, details any) []validator.ValidationErrResponse {
 	var detailErrors []validator.ValidationErrResponse
 
 	detailsBytes, err := json.Marshal(details)
 	if err != nil {
+		h.logger.Printf("[ERROR] json.Marshal - invalid details: %s", err.Error())
 		return append(detailErrors, validator.ValidationErrResponse{
 			FailedField: "details",
 			Tag:         "invalid_format",
@@ -162,6 +163,7 @@ func validateLiabilityDetails(categoryType string, details any) []validator.Vali
 	case "short_term":
 		var detail domain.ShortTermLiability
 		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			h.logger.Printf("[ERROR] json.Unmarshal - invalid details: %s", err.Error())
 			return append(detailErrors, validator.ValidationErrResponse{
 				FailedField: "details",
 				Tag:         "invalid_format",
@@ -172,6 +174,7 @@ func validateLiabilityDetails(categoryType string, details any) []validator.Vali
 	case "long_term":
 		var detail domain.LongTermLiability
 		if err := json.Unmarshal(detailsBytes, &detail); err != nil {
+			h.logger.Printf("[ERROR] json.Unmarshal - invalid details: %s", err.Error())
 			return append(detailErrors, validator.ValidationErrResponse{
 				FailedField: "details",
 				Tag:         "invalid_format",
