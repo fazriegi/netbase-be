@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: fintrack-db
+    container_name: netbase-db
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -20,7 +20,7 @@ services:
 
   migrate:
     image: migrate/migrate
-    container_name: fintrack-migrate
+    container_name: netbase-migrate
     volumes:
       - ./db/migrations:/migrations
     command:
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fintrack-web
+    container_name: netbase-web
     restart: always
     ports:
       - "${PORT}:${PORT}"

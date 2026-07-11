@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/fazriegi/fintrack-be/internal/delivery/cron"
-	"github.com/fazriegi/fintrack-be/internal/delivery/http/handler"
-	"github.com/fazriegi/fintrack-be/pkg/database"
-	"github.com/fazriegi/fintrack-be/pkg/logger"
+	"github.com/fazriegi/netbase-be/internal/delivery/cron"
+	"github.com/fazriegi/netbase-be/internal/delivery/http/handler"
+	"github.com/fazriegi/netbase-be/pkg/database"
+	"github.com/fazriegi/netbase-be/pkg/logger"
 	"github.com/joho/godotenv"
 )
 

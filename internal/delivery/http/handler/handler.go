@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fazriegi/fintrack-be/internal/delivery/http/middleware"
-	"github.com/fazriegi/fintrack-be/internal/infrastructure/yahoo"
-	"github.com/fazriegi/fintrack-be/internal/repository"
-	"github.com/fazriegi/fintrack-be/internal/usecase"
+	"github.com/fazriegi/netbase-be/internal/delivery/http/middleware"
+	"github.com/fazriegi/netbase-be/internal/infrastructure/yahoo"
+	"github.com/fazriegi/netbase-be/internal/repository"
+	"github.com/fazriegi/netbase-be/internal/usecase"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/rs/cors"

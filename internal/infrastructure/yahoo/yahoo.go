@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/fazriegi/fintrack-be/internal/domain"
+	"github.com/fazriegi/netbase-be/internal/domain"
 	"github.com/shopspring/decimal"
 )
 

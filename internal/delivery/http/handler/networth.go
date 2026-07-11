@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/fazriegi/fintrack-be/internal/delivery/http/middleware"
-	"github.com/fazriegi/fintrack-be/internal/usecase"
+	"github.com/fazriegi/netbase-be/internal/delivery/http/middleware"
+	"github.com/fazriegi/netbase-be/internal/usecase"
 )
 
 type NetworthHandler struct {

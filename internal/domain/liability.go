@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/fazriegi/fintrack-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 )

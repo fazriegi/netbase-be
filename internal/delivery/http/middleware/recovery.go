@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/fazriegi/fintrack-be/pkg"
-	"github.com/fazriegi/fintrack-be/pkg/constant"
+	"github.com/fazriegi/netbase-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg/constant"
 )
 
 func Recovery(logger *log.Logger) func(http.Handler) http.Handler {

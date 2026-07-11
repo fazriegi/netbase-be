@@ -7,9 +7,9 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/fazriegi/fintrack-be/internal/domain"
-	"github.com/fazriegi/fintrack-be/pkg"
-	"github.com/fazriegi/fintrack-be/pkg/constant"
+	"github.com/fazriegi/netbase-be/internal/domain"
+	"github.com/fazriegi/netbase-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg/constant"
 	"github.com/google/uuid"
 )
 

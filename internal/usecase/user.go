@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/fazriegi/fintrack-be/internal/domain"
-	"github.com/fazriegi/fintrack-be/pkg"
-	"github.com/fazriegi/fintrack-be/pkg/constant"
-	"github.com/fazriegi/fintrack-be/pkg/password"
-	"github.com/fazriegi/fintrack-be/pkg/token"
+	"github.com/fazriegi/netbase-be/internal/domain"
+	"github.com/fazriegi/netbase-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg/constant"
+	"github.com/fazriegi/netbase-be/pkg/password"
+	"github.com/fazriegi/netbase-be/pkg/token"
 	"github.com/google/uuid"
 )
 

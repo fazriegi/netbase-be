@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/fazriegi/fintrack-be/internal/delivery/http/middleware"
-	"github.com/fazriegi/fintrack-be/internal/domain"
-	"github.com/fazriegi/fintrack-be/internal/usecase"
-	"github.com/fazriegi/fintrack-be/pkg"
-	"github.com/fazriegi/fintrack-be/pkg/constant"
-	"github.com/fazriegi/fintrack-be/pkg/validator"
+	"github.com/fazriegi/netbase-be/internal/delivery/http/middleware"
+	"github.com/fazriegi/netbase-be/internal/domain"
+	"github.com/fazriegi/netbase-be/internal/usecase"
+	"github.com/fazriegi/netbase-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg/constant"
+	"github.com/fazriegi/netbase-be/pkg/validator"
 	"github.com/google/uuid"
 )
 

@@ -1,8 +1,8 @@
-# Fintrack BE
+# NetBase BE
 
-###### Fintrack BE
+###### NetBase BE
 
-FinTrack BE is a backend application for managing assets, liabilities, and personal finance tracking.
+NetBase BE is a backend application for managing assets, liabilities, and personal finance tracking.
 
 ## Technology Stack
 
@@ -25,18 +25,18 @@ FinTrack BE is a backend application for managing assets, liabilities, and perso
 
 ## Installation
 
-Follow these steps to install and run Fintrack BE on your local machine:
+Follow these steps to install and run NetBase BE on your local machine:
 
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/fazriegi/fintrack-be.git
+   git clone https://github.com/fazriegi/netbase-be.git
    ```
 
 2. **Move to cloned repository folder**
 
    ```bash
-   cd fintrack-be
+   cd netbase-be
    ```
 
 3. **Update dependecies**

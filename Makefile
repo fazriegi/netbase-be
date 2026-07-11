@@ -1,7 +1,7 @@
 .PHONY: build run clean
 
 
-BINARY=bin/fintrack-be
+BINARY=bin/netbase-be
 
 
 build:

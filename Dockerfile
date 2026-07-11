@@ -14,7 +14,7 @@ COPY . .
 
 # - CGO_ENABLED=0 disables CGO for a fully static binary
 # - -ldflags="-w -s" strips debugging information and symbols to reduce size
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/fintrack-be .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/netbase-be .
 
 # ==========================================
 # RUNNER STAGE
@@ -25,7 +25,7 @@ RUN apk add --no-cache ca-certificates tzdata
 
 WORKDIR /app
 
-COPY --from=builder /app/bin/fintrack-be .
+COPY --from=builder /app/bin/netbase-be .
 
 RUN mkdir -p log
 
@@ -35,4 +35,4 @@ ENV LOG_FILE=/app/log/app.log
 
 EXPOSE 8080
 
-CMD ["./fintrack-be"]
+CMD ["./netbase-be"]

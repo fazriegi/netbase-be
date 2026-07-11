@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/fazriegi/fintrack-be/pkg"
-	"github.com/fazriegi/fintrack-be/pkg/constant"
-	"github.com/fazriegi/fintrack-be/pkg/token"
+	"github.com/fazriegi/netbase-be/pkg"
+	"github.com/fazriegi/netbase-be/pkg/constant"
+	"github.com/fazriegi/netbase-be/pkg/token"
 	"github.com/google/uuid"
 )
 
