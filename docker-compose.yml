@@ -12,13 +12,24 @@ services:
     volumes:
       # Persist PostgreSQL data locally
       - postgres_data:/var/lib/postgresql/data
-      # Mount the schema file to initialize the DB automatically on creation
-      - ./db/migrations/postgres.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrate:
+    image: migrate/migrate
+    container_name: fintrack-migrate
+    volumes:
+      - ./db/migrations:/migrations
+    command:
+      - -path=/migrations
+      - -database=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - up
+    depends_on:
+      db:
+        condition: service_healthy
 
   web:
     build:
@@ -31,12 +42,14 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
     volumes:
       - ./log:/app/log
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
