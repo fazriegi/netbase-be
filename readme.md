@@ -69,28 +69,41 @@ Make sure you have [Docker](https://docs.docker.com/get-docker/) and [Docker Com
 
 ### Steps to Run
 
-1. **Build and start the containers:**
+1. **Copy `.env.example` to `.env`**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Configure your `.env`**
+
+3. **Build and start the containers:**
+
    ```bash
    docker compose up --build -d
    ```
-   *Note: This will spin up PostgreSQL, automatically run the schema migrations from `db/migrations/postgres.sql`, build the optimized multi-stage Go backend image, and start the API server.*
 
-2. **Check container status:**
+   _Note: This will spin up PostgreSQL, automatically run the schema migrations from `db/migrations/postgres.sql`, build the optimized multi-stage Go backend image, and start the API server._
+
+4. **Check container status:**
+
    ```bash
    docker compose ps
    ```
 
-3. **View logs:**
+5. **View logs:**
+
    ```bash
    docker compose logs -f
    ```
 
-4. **Stop the containers:**
+6. **Stop the containers:**
+
    ```bash
    docker compose down
    ```
 
-5. **Stop and remove database volumes (clean reset):**
+7. **Stop and remove database volumes (clean reset):**
    ```bash
    docker compose down -v
    ```
