@@ -35,3 +35,19 @@ type DashboardNetworthSummaryResponse struct {
 	TotalLiabilities decimal.Decimal `json:"total_liabilities"`
 	DebtRatio        decimal.Decimal `json:"debt_ratio"`
 }
+
+type DashboardNetworthHistoryRequest struct {
+	Timeframe string `query:"timeframe" validate:"required,oneof=1M 3M 6M YTD 1Y ALL range"`
+	StartDate string `query:"start_date" validate:"omitempty,date=YYYY-MM-DD"`
+	EndDate   string `query:"end_date" validate:"omitempty,date=YYYY-MM-DD"`
+}
+
+type DashboardNetworthHistoryResponse struct {
+	Timeframe string `json:"timeframe"`
+	Summary   struct {
+		ChangeAmount     decimal.Decimal `json:"change_amount"`
+		ChangePercentage decimal.Decimal `json:"change_percentage"`
+		IsPositive       bool            `json:"is_positive"`
+	} `json:"summary"`
+	History []Networth `json:"history"`
+}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/fazriegi/netbase-be/internal/domain"
 	"github.com/fazriegi/netbase-be/pkg/constant"
@@ -93,4 +95,60 @@ func (r *networthRepository) GetCurrent(ctx context.Context, userId uuid.UUID) (
 	}
 
 	return &networth, err
+}
+
+func (r *networthRepository) GetNetworthHistory(ctx context.Context, req *domain.ListNetworthHistoryRequest) (*[]domain.Networth, error) {
+	db := getQueryer(ctx, r.db)
+
+	var networths = make([]domain.Networth, 0)
+	args := []interface{}{req.UserID}
+
+	var query string
+
+	if req.Timeframe == "ALL" {
+		query = `
+			SELECT DISTINCT ON (DATE_TRUNC('month', recorded_date)) 
+				id, user_id, total_assets, total_liabilities, net_worth, recorded_date
+			FROM net_worth_histories
+			WHERE user_id = $1
+			ORDER BY DATE_TRUNC('month', recorded_date) ASC, recorded_date DESC
+		`
+	} else {
+		query = `
+			SELECT id, user_id, total_assets, total_liabilities, net_worth, recorded_date
+			FROM net_worth_histories
+			WHERE user_id = $1
+		`
+
+		switch req.Timeframe {
+		case "1M":
+			query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+			args = append(args, time.Now().AddDate(0, -1, 0), time.Now())
+		case "3M":
+			query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+			args = append(args, time.Now().AddDate(0, -3, 0), time.Now())
+		case "6M":
+			query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+			args = append(args, time.Now().AddDate(0, -6, 0), time.Now())
+		case "YTD":
+			query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+			args = append(args, time.Date(time.Now().Year(), time.January, 1, 0, 0, 0, 0, time.UTC), time.Now())
+		case "1Y":
+			query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+			args = append(args, time.Now().AddDate(-1, 0, 0), time.Now())
+		case "range":
+			if req.StartDate != "" && req.EndDate != "" {
+				query += fmt.Sprintf(` AND recorded_date BETWEEN $%d AND $%d`, len(args)+1, len(args)+2)
+				args = append(args, req.StartDate, req.EndDate)
+			}
+		}
+
+		query += ` ORDER BY recorded_date ASC`
+	}
+
+	err := db.SelectContext(ctx, &networths, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return &networths, nil
 }

@@ -24,6 +24,7 @@ type DashboardUsecase interface {
 	GetCashflow(ctx context.Context, period string) (resp pkg.Response)
 	GetActiveMilestone(ctx context.Context) (resp pkg.Response)
 	GetNetworthSummary(ctx context.Context) (resp pkg.Response)
+	GetNetworthHistory(ctx context.Context, req *domain.DashboardNetworthHistoryRequest) (resp pkg.Response)
 }
 
 func NewDashboardUsecase(
@@ -146,6 +147,46 @@ func (u *dashboardUsecase) GetNetworthSummary(ctx context.Context) (resp pkg.Res
 		TotalAssets:      networthData.TotalAssets,
 		TotalLiabilities: networthData.TotalLiabilities,
 		DebtRatio:        debtRatio,
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)
+}
+
+func (u *dashboardUsecase) GetNetworthHistory(ctx context.Context, req *domain.DashboardNetworthHistoryRequest) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	histories, err := u.nwRepo.GetNetworthHistory(ctx, &domain.ListNetworthHistoryRequest{
+		Timeframe: req.Timeframe,
+		StartDate: req.StartDate,
+		EndDate:   req.EndDate,
+		UserID:    userId,
+	})
+	if err != nil {
+		u.log.Printf("[ERROR] nwRepo.GetNetworthHistory: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	var dataResponse domain.DashboardNetworthHistoryResponse
+	dataResponse.Timeframe = req.Timeframe
+	dataResponse.History = *histories
+
+	if len(*histories) > 0 {
+		first := (*histories)[0].NetWorth
+		last := (*histories)[len(*histories)-1].NetWorth
+
+		changeAmount := last.Sub(first)
+		changePercentage := decimal.Zero
+		if !first.IsZero() {
+			changePercentage = changeAmount.Div(first.Abs()).Mul(decimal.NewFromInt(100)).Round(2)
+		}
+
+		dataResponse.Summary.ChangeAmount = changeAmount
+		dataResponse.Summary.ChangePercentage = changePercentage
+		dataResponse.Summary.IsPositive = changeAmount.GreaterThanOrEqual(decimal.Zero)
+	} else {
+		dataResponse.Summary.ChangeAmount = decimal.Zero
+		dataResponse.Summary.ChangePercentage = decimal.Zero
+		dataResponse.Summary.IsPositive = true
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)

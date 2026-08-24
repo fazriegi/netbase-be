@@ -26,6 +26,7 @@ func NewDashboardHandler(mux *http.ServeMux, uc usecase.DashboardUsecase, logger
 	mux.Handle("GET /v1/dashboard/cashflow", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetCashflow)))
 	mux.Handle("GET /v1/dashboard/milestone", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetActiveMilestone)))
 	mux.Handle("GET /v1/dashboard/networth", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetNetworthSummary)))
+	mux.Handle("GET /v1/dashboard/networth/history", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetNetworthHistory)))
 }
 
 func (h *DashboardHandler) GetCashflow(w http.ResponseWriter, r *http.Request) {
@@ -58,4 +59,28 @@ func (h *DashboardHandler) GetActiveMilestone(w http.ResponseWriter, r *http.Req
 
 func (h *DashboardHandler) GetNetworthSummary(w http.ResponseWriter, r *http.Request) {
 	h.usecase.GetNetworthSummary(r.Context()).HTTP(w)
+}
+
+func (h *DashboardHandler) GetNetworthHistory(w http.ResponseWriter, r *http.Request) {
+	var req domain.DashboardNetworthHistoryRequest
+
+	if err := pkg.ParseQueryParam(r, &req); err != nil {
+		h.logger.Printf("[ERROR] parsing query params: %s", err.Error())
+		pkg.NewResponse(http.StatusBadRequest, constant.ErrParseQueryParam, nil, nil).HTTP(w)
+		return
+	}
+
+	// validation
+	validationErr := validator.ValidateRequest(&req)
+
+	if len(validationErr) > 0 {
+		errResponse := map[string]any{
+			"errors": validationErr,
+		}
+
+		pkg.NewResponse(http.StatusUnprocessableEntity, constant.ErrValidation, errResponse, nil).HTTP(w)
+		return
+	}
+
+	h.usecase.GetNetworthHistory(r.Context(), &req).HTTP(w)
 }
