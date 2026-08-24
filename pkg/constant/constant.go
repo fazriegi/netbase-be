@@ -10,6 +10,7 @@ var (
 	ErrInvalidJson     = "invalid JSON format"
 	ErrInvalidToken    = "invalid or expired token"
 	ErrInvalidParam    = "invalid param"
+	ErrInvalidRequest  = "invalid request"
 
 	ErrUserNotFound   = "User not found"
 	ErrUsernameExists = "Username already exists"

@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -19,6 +20,7 @@ func ValidateRequest(data any) []ValidationErrResponse {
 
 	validate := validator.New()
 	validate.RegisterValidation("password", password) // register custom validator
+	validate.RegisterValidation("date", date)         // register custom validator
 
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := fld.Tag.Get("json")
@@ -29,6 +31,14 @@ func ValidateRequest(data any) []ValidationErrResponse {
 		if idx := strings.Index(name, ","); idx != -1 {
 			name = name[:idx]
 		}
+
+		if name == "" {
+			name = fld.Tag.Get("query")
+			if idx := strings.Index(name, ","); idx != -1 {
+				name = name[:idx]
+			}
+		}
+
 		return name
 	})
 
@@ -57,6 +67,34 @@ func password(fl validator.FieldLevel) bool {
 		hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
 
 		return hasDigit && hasSpecialChar && hasLower && hasUpper && len(password) >= 8
+	}
+
+	return true
+}
+
+func date(fl validator.FieldLevel) bool {
+	val := fl.Field().String()
+	if val == "" {
+		return true
+	}
+
+	param := fl.Param()
+	if param == "" {
+		param = "YYYY-MM"
+	}
+
+	layout := param
+	layout = strings.ReplaceAll(layout, "YYYY", "2006")
+	layout = strings.ReplaceAll(layout, "MM", "01")
+	layout = strings.ReplaceAll(layout, "DD", "02")
+
+	t, err := time.Parse(layout, val)
+	if err != nil {
+		return false
+	}
+
+	if t.Year() < 1970 {
+		return false
 	}
 
 	return true
