@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/fazriegi/netbase-be/internal/delivery/http/middleware"
@@ -35,14 +36,30 @@ func NewUserHandler(mux *http.ServeMux, uc usecase.UserUsecase, logger *log.Logg
 }
 
 func (h *UserHandler) setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
+	isSecure := os.Getenv("COOKIE_SECURE") == "true"
+
+	sameSite := http.SameSiteLaxMode
+	if isSecure {
+		sameSite = http.SameSiteNoneMode
+	}
+
+	accessExpires := time.Now().Add(15 * time.Minute)
+	refreshExpires := time.Now().Add(7 * 24 * time.Hour)
+	if accessToken == "" {
+		accessExpires = time.Unix(0, 0)
+	}
+	if refreshToken == "" {
+		refreshExpires = time.Unix(0, 0)
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
 		Value:    accessToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true, // Set true in production (HTTPS)
-		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(15 * time.Minute),
+		Secure:   isSecure,
+		SameSite: sameSite,
+		Expires:  accessExpires,
 	})
 
 	http.SetCookie(w, &http.Cookie{
@@ -50,9 +67,9 @@ func (h *UserHandler) setAuthCookies(w http.ResponseWriter, accessToken, refresh
 		Value:    refreshToken,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
+		Secure:   isSecure,
+		SameSite: sameSite,
+		Expires:  refreshExpires,
 	})
 }
 
