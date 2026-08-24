@@ -23,7 +23,7 @@ func NewUserRepository(db *sqlx.DB) domain.UserRepository {
 
 func (r *userRepo) Create(ctx context.Context, user *domain.User) (uuid.UUID, error) {
 	db := getQueryer(ctx, r.db)
-	query := `INSERT INTO users (username, email, password, full_name) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO users (username, email, password, full_name) VALUES ($1, NULLIF($2, ''), $3, $4) RETURNING id`
 	var userId uuid.UUID
 	err := db.QueryRowContext(ctx, query, user.Username, user.Email, user.Password, user.FullName).Scan(&userId)
 	return userId, err
