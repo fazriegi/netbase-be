@@ -23,6 +23,7 @@ type dashboardUsecase struct {
 type DashboardUsecase interface {
 	GetCashflow(ctx context.Context, period string) (resp pkg.Response)
 	GetActiveMilestone(ctx context.Context) (resp pkg.Response)
+	GetNetworthSummary(ctx context.Context) (resp pkg.Response)
 }
 
 func NewDashboardUsecase(
@@ -120,6 +121,31 @@ func (u *dashboardUsecase) GetActiveMilestone(ctx context.Context) (resp pkg.Res
 			u.log.Printf("[ERROR] mlRepo.Update: %s", err.Error())
 			return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 		}
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)
+}
+
+func (u *dashboardUsecase) GetNetworthSummary(ctx context.Context) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	networthData, err := u.nwRepo.GetCurrent(ctx, userId)
+	if err != nil {
+		u.log.Printf("[ERROR] nwRepo.GetCurrent: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	debtRatio := decimal.Zero
+	if networthData.TotalAssets.GreaterThan(decimal.Zero) {
+		debtRatio = networthData.TotalLiabilities.Div(networthData.TotalAssets).Mul(decimal.NewFromInt(100)).Round(2)
+	}
+
+	dataResponse := domain.DashboardNetworthSummaryResponse{
+		NetWorth:         networthData.NetWorth,
+		GrowthPercentage: networthData.GrowthPercentage,
+		TotalAssets:      networthData.TotalAssets,
+		TotalLiabilities: networthData.TotalLiabilities,
+		DebtRatio:        debtRatio,
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)

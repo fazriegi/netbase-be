@@ -27,3 +27,11 @@ type DashboardMilestoneResponse struct {
 	ProgressPercentage decimal.Decimal `json:"progress_percentage"`
 	IsCompleted        bool            `json:"is_completed"`
 }
+
+type DashboardNetworthSummaryResponse struct {
+	NetWorth         decimal.Decimal `json:"net_worth"`
+	GrowthPercentage decimal.Decimal `json:"growth_percentage"`
+	TotalAssets      decimal.Decimal `json:"total_assets"`
+	TotalLiabilities decimal.Decimal `json:"total_liabilities"`
+	DebtRatio        decimal.Decimal `json:"debt_ratio"`
+}
