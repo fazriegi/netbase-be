@@ -16,14 +16,22 @@ import (
 type dashboardUsecase struct {
 	log       *log.Logger
 	transRepo domain.TransactionRepository
+	mlRepo    domain.MilestoneRepository
+	nwRepo    domain.NetworthRepository
 }
 
 type DashboardUsecase interface {
 	GetCashflow(ctx context.Context, period string) (resp pkg.Response)
+	GetActiveMilestone(ctx context.Context) (resp pkg.Response)
 }
 
-func NewDashboardUsecase(log *log.Logger, transRepo domain.TransactionRepository) DashboardUsecase {
-	return &dashboardUsecase{log, transRepo}
+func NewDashboardUsecase(
+	log *log.Logger,
+	transRepo domain.TransactionRepository,
+	mlRepo domain.MilestoneRepository,
+	nwRepo domain.NetworthRepository,
+) DashboardUsecase {
+	return &dashboardUsecase{log, transRepo, mlRepo, nwRepo}
 }
 
 func (u *dashboardUsecase) GetCashflow(ctx context.Context, period string) (resp pkg.Response) {
@@ -58,6 +66,60 @@ func (u *dashboardUsecase) GetCashflow(ctx context.Context, period string) (resp
 		TotalOutflow:    summary.Expense,
 		NetFreeCashflow: summary.Net,
 		SavingsRate:     savingsRate,
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)
+}
+
+func (u *dashboardUsecase) GetActiveMilestone(ctx context.Context) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	milestoneData, err := u.mlRepo.GetCurrent(ctx, &domain.GetMilestone{
+		UserId: userId,
+	})
+	if err != nil {
+		u.log.Printf("[ERROR] mlRepo.GetCurrent: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	if milestoneData == nil {
+		return pkg.NewResponse(http.StatusOK, "No active milestone", nil, nil)
+	}
+
+	networthData, err := u.nwRepo.GetCurrent(ctx, userId)
+	if err != nil {
+		u.log.Printf("[ERROR] nwRepo.GetCurrent: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	progressPercentage := decimal.Zero
+	if milestoneData.TargetAmount.GreaterThan(decimal.Zero) {
+		progressPercentage = networthData.NetWorth.Div(milestoneData.TargetAmount).Mul(decimal.NewFromInt(100)).Round(2)
+	}
+	dataResponse := domain.DashboardMilestoneResponse{
+		ID:                 milestoneData.ID,
+		Title:              milestoneData.Title,
+		TargetAmount:       milestoneData.TargetAmount,
+		BaseAmount:         milestoneData.BaseAmount,
+		CurrentNetworth:    networthData.NetWorth,
+		RemainingGap:       milestoneData.TargetAmount.Sub(networthData.NetWorth),
+		ProgressPercentage: progressPercentage,
+		IsCompleted:        milestoneData.TargetAmount.LessThanOrEqual(networthData.NetWorth),
+	}
+
+	if dataResponse.IsCompleted != milestoneData.IsCompleted {
+		milestoneData.IsCompleted = dataResponse.IsCompleted
+
+		if milestoneData.IsCompleted {
+			now := time.Now()
+			milestoneData.CompletionDate = &now
+		}
+
+		err = u.mlRepo.Update(ctx, milestoneData)
+		if err != nil {
+			u.log.Printf("[ERROR] mlRepo.Update: %s", err.Error())
+			return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+		}
 	}
 
 	return pkg.NewResponse(http.StatusOK, "Success", dataResponse, nil)

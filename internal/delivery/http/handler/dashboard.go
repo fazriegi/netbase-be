@@ -24,6 +24,7 @@ func NewDashboardHandler(mux *http.ServeMux, uc usecase.DashboardUsecase, logger
 	}
 
 	mux.Handle("GET /v1/dashboard/cashflow", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetCashflow)))
+	mux.Handle("GET /v1/dashboard/milestone", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetActiveMilestone)))
 }
 
 func (h *DashboardHandler) GetCashflow(w http.ResponseWriter, r *http.Request) {
@@ -48,4 +49,8 @@ func (h *DashboardHandler) GetCashflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.usecase.GetCashflow(r.Context(), req.Period).HTTP(w)
+}
+
+func (h *DashboardHandler) GetActiveMilestone(w http.ResponseWriter, r *http.Request) {
+	h.usecase.GetActiveMilestone(r.Context()).HTTP(w)
 }
