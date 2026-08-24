@@ -32,7 +32,7 @@ func (r *userRepo) Create(ctx context.Context, user *domain.User) (uuid.UUID, er
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	db := getQueryer(ctx, r.db)
 	var user domain.User
-	query := `SELECT id, username, email, password, full_name FROM users WHERE email = $1`
+	query := `SELECT id, username, COALESCE(email, '') AS email, password, full_name FROM users WHERE email = $1`
 	err := db.GetContext(ctx, &user, query, email)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrUserNotFound)
@@ -43,7 +43,7 @@ func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, 
 func (r *userRepo) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	db := getQueryer(ctx, r.db)
 	var user domain.User
-	query := `SELECT id, username, email, password, full_name FROM users WHERE username = $1`
+	query := `SELECT id, username, COALESCE(email, '') AS email, password, full_name FROM users WHERE username = $1`
 	err := db.GetContext(ctx, &user, query, username)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrUserNotFound)
@@ -54,7 +54,7 @@ func (r *userRepo) GetByUsername(ctx context.Context, username string) (*domain.
 func (r *userRepo) GetByID(ctx context.Context, userId uuid.UUID) (*domain.User, error) {
 	db := getQueryer(ctx, r.db)
 	var user domain.User
-	query := `SELECT id, username, email, password, full_name FROM users WHERE id = $1`
+	query := `SELECT id, username, COALESCE(email, '') AS email, password, full_name FROM users WHERE id = $1`
 	err := db.GetContext(ctx, &user, query, userId)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrUserNotFound)
