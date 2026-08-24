@@ -53,6 +53,7 @@ type ListTransactionRequest struct {
 	pkg.PaginationRequest
 	UserID       uuid.UUID
 	CategoryName string `query:"category_name"`
+	CategoryType string `query:"category_type"`
 	Notes        string `query:"notes"`
 	FilterType   string `query:"filter_type"` // "week", "month", "year", "range"
 	DateStr      string `query:"date"`        // reference date YYYY-MM-DD

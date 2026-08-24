@@ -90,6 +90,10 @@ func (r *transactionRepository) transactionFilter(req *domain.ListTransactionReq
 		query += ` AND transactions.notes ILIKE :notes`
 	}
 
+	if req.CategoryType != "" {
+		query += ` AND tc.base_type = :category_type`
+	}
+
 	switch req.FilterType {
 	case "week":
 		query += ` AND DATE_TRUNC('week', transactions.transaction_date) = DATE_TRUNC('week', CAST(:ref_date AS date))`
@@ -153,6 +157,7 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 	arg := map[string]interface{}{
 		"user_id":       req.UserID,
 		"category_name": "%" + req.CategoryName + "%",
+		"category_type": req.CategoryType,
 		"notes":         "%" + req.Notes + "%",
 		"ref_date":      refDate,
 		"start_date":    req.StartDateStr,
@@ -239,6 +244,7 @@ func (r *transactionRepository) GetSummary(ctx context.Context, req *domain.List
 
 	rows, err := db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"user_id":       req.UserID,
+		"category_type": req.CategoryType,
 		"category_name": "%" + req.CategoryName + "%",
 		"notes":         "%" + req.Notes + "%",
 		"ref_date":      refDate,
