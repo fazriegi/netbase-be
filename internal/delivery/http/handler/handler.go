@@ -39,6 +39,10 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 	transactionRepo := repository.NewTransactionRepository(db)
 	transactionUC := usecase.NewTransactionUsecase(logger, transactionRepo, txManager, assetRepo, liabilityRepo)
 
+	// MILESTONE
+	milestoneRepo := repository.NewMilestoneRepository(db)
+	milestoneUC := usecase.NewMilestoneUsecase(logger, milestoneRepo, networthRepo)
+
 	// DASHBOARD
 	dashboardUC := usecase.NewDashboardUsecase(logger, transactionRepo)
 
@@ -49,6 +53,7 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 	NewLiabilityHandler(mux, liabilityUC, logger)
 	NewNetworthHandler(mux, networthUC, logger)
 	NewTransactionHandler(mux, transactionUC, logger)
+	NewMilestoneHandler(mux, milestoneUC, logger)
 	NewDashboardHandler(mux, dashboardUC, logger)
 
 	origin := os.Getenv("ALLOWED_ORIGIN")

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/shopspring/decimal"
 )
 
 type ValidationErrResponse struct {
@@ -19,8 +20,9 @@ func ValidateRequest(data any) []ValidationErrResponse {
 	var validationErrors []ValidationErrResponse
 
 	validate := validator.New()
-	validate.RegisterValidation("password", password) // register custom validator
-	validate.RegisterValidation("date", date)         // register custom validator
+	validate.RegisterValidation("password", password)        // register custom validator
+	validate.RegisterValidation("date", date)                // register custom validator
+	validate.RegisterValidation("decimal", decimalValidator) // register custom validator
 
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := fld.Tag.Get("json")
@@ -98,4 +100,57 @@ func date(fl validator.FieldLevel) bool {
 	}
 
 	return true
+}
+
+func decimalValidator(fl validator.FieldLevel) bool {
+	field := fl.Field()
+
+	var d decimal.Decimal
+
+	switch v := field.Interface().(type) {
+	case decimal.Decimal:
+		d = v
+	case *decimal.Decimal:
+		if v == nil {
+			return true
+		}
+		d = *v
+	case string:
+		if v == "" {
+			return true
+		}
+		parsed, err := decimal.NewFromString(v)
+		if err != nil {
+			return false
+		}
+		d = parsed
+	default:
+		if field.Kind() == reflect.String {
+			str := field.String()
+			if str == "" {
+				return true
+			}
+			parsed, err := decimal.NewFromString(str)
+			if err != nil {
+				return false
+			}
+			d = parsed
+		} else {
+			return false
+		}
+	}
+
+	param := fl.Param()
+	switch param {
+	case "gt=0", "positive":
+		return d.GreaterThan(decimal.Zero)
+	case "gte=0":
+		return d.GreaterThanOrEqual(decimal.Zero)
+	case "lt=0":
+		return d.LessThan(decimal.Zero)
+	case "lte=0":
+		return d.LessThanOrEqual(decimal.Zero)
+	default:
+		return true
+	}
 }
