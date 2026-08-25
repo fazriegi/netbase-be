@@ -7,6 +7,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      TZ: Asia/Jakarta
     ports:
       - "${DB_PORT}:5432"
     volumes:
@@ -42,6 +43,7 @@ services:
     env_file:
       - .env
     environment:
+      - TZ=Asia/Jakarta
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
     volumes:
       - ./log:/app/log

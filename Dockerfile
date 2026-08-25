@@ -32,6 +32,7 @@ RUN mkdir -p log
 ENV ENV=production
 ENV PORT=8080
 ENV LOG_FILE=/app/log/app.log
+ENV TZ=Asia/Jakarta
 
 EXPOSE 8080
 
