@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"encoding"
 	"errors"
 	"net/http"
 	"reflect"
@@ -67,6 +68,18 @@ func ParseQueryParam(r *http.Request, dest interface{}) error {
 			// Jika bukan pointer, langsung gunakan field-nya
 			targetField = field
 			baseKind = targetField.Kind()
+		}
+
+		// HANDLE TIPE SEPERTI UUID / DECIMAL / TEXT UNMARSHALER
+		if targetField.CanAddr() {
+			if u, ok := targetField.Addr().Interface().(encoding.TextUnmarshaler); ok {
+				if err := u.UnmarshalText([]byte(valStr)); err == nil {
+					if isPtr {
+						field.Set(targetField.Addr())
+					}
+					continue
+				}
+			}
 		}
 
 		// Set nilai ke targetField berdasarkan tipe dasarnya

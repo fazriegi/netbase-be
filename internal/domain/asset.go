@@ -36,10 +36,11 @@ type AssetDB struct {
 
 type ListAssetRequest struct {
 	pkg.PaginationRequest
-	UserId   uuid.UUID
-	Name     string `query:"name"`
-	Category string `query:"category"`
-	IsActive *bool  `query:"is_active"`
+	UserId     uuid.UUID
+	Name       string    `query:"name"`
+	Category   string    `query:"category"`
+	IsActive   *bool     `query:"is_active"`
+	CategoryID uuid.UUID `query:"category_id"`
 }
 
 type ListAssetResponse struct {
@@ -96,4 +97,3 @@ type AssetRepository interface {
 	GetTickers(ctx context.Context) (*[]string, error)
 	UpdateStockPrice(ctx context.Context, ticker string, price decimal.Decimal) error
 }
-

@@ -48,6 +48,10 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 		query += ` AND assets.is_active = :is_active`
 	}
 
+	if req.CategoryID != uuid.Nil {
+		query += ` AND ac.id = :category_id`
+	}
+
 	if req.Sort == nil {
 		req.Sort = &defaultSort
 	}
@@ -60,10 +64,11 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 	go func() {
 		defer wg.Done()
 		resCount, err := db.NamedQueryContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM (%s) as count_query", query), map[string]interface{}{
-			"user_id":   req.UserId,
-			"name":      "%" + req.Name + "%",
-			"category":  "%" + req.Category + "%",
-			"is_active": req.IsActive,
+			"user_id":     req.UserId,
+			"name":        "%" + req.Name + "%",
+			"category":    "%" + req.Category + "%",
+			"is_active":   req.IsActive,
+			"category_id": req.CategoryID,
 		})
 
 		if err != nil {
@@ -85,13 +90,14 @@ func (r *assetRepository) ListAsset(ctx context.Context, req *domain.ListAssetRe
 	go func() {
 		defer wg.Done()
 		res, err := pkg.SelectWithPagination(ctx, db, query, map[string]interface{}{
-			"page":      req.Page,
-			"limit":     req.Limit,
-			"sort":      req.Sort,
-			"user_id":   req.UserId,
-			"name":      "%" + req.Name + "%",
-			"category":  "%" + req.Category + "%",
-			"is_active": req.IsActive,
+			"page":        req.Page,
+			"limit":       req.Limit,
+			"sort":        req.Sort,
+			"user_id":     req.UserId,
+			"name":        "%" + req.Name + "%",
+			"category":    "%" + req.Category + "%",
+			"is_active":   req.IsActive,
+			"category_id": req.CategoryID,
 		})
 
 		if err != nil {
