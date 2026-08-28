@@ -47,10 +47,11 @@ type CreateLiability struct {
 
 type ListLiabilityRequest struct {
 	pkg.PaginationRequest
-	UserId   uuid.UUID
-	Name     string `query:"name"`
-	Category string `query:"category"`
-	IsActive *bool  `query:"is_active"`
+	UserId     uuid.UUID
+	Name       string    `query:"name"`
+	Category   string    `query:"category"`
+	CategoryID uuid.UUID `query:"category_id"`
+	IsActive   *bool     `query:"is_active"`
 }
 
 type ListLiabilityResponse struct {
@@ -79,4 +80,3 @@ type LiabilityRepository interface {
 	Insert(ctx context.Context, data *LiabilityDB) error
 	Update(ctx context.Context, data *LiabilityDB) error
 }
-

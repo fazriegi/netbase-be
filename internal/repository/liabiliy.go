@@ -60,6 +60,10 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 		}
 	}
 
+	if req.CategoryID != uuid.Nil {
+		query += ` AND liabilities.category_id = :category_id`
+	}
+
 	if req.Sort == nil {
 		req.Sort = &defaultSort
 	}
@@ -72,9 +76,10 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 	go func() {
 		defer wg.Done()
 		resCount, err := db.NamedQueryContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM (%s) as count_query", query), map[string]interface{}{
-			"user_id":  req.UserId,
-			"name":     "%" + req.Name + "%",
-			"category": "%" + req.Category + "%",
+			"user_id":     req.UserId,
+			"name":        "%" + req.Name + "%",
+			"category":    "%" + req.Category + "%",
+			"category_id": req.CategoryID,
 		})
 
 		if err != nil {
@@ -96,12 +101,13 @@ func (r *liabilityRepository) List(ctx context.Context, req *domain.ListLiabilit
 	go func() {
 		defer wg.Done()
 		res, err := pkg.SelectWithPagination(ctx, db, query, map[string]interface{}{
-			"page":     req.Page,
-			"limit":    req.Limit,
-			"sort":     req.Sort,
-			"user_id":  req.UserId,
-			"name":     "%" + req.Name + "%",
-			"category": "%" + req.Category + "%",
+			"page":        req.Page,
+			"limit":       req.Limit,
+			"sort":        req.Sort,
+			"user_id":     req.UserId,
+			"name":        "%" + req.Name + "%",
+			"category":    "%" + req.Category + "%",
+			"category_id": req.CategoryID,
 		})
 
 		if err != nil {
