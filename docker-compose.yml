@@ -44,7 +44,7 @@ services:
     container_name: netbase-web
     restart: always
     ports:
-      - "${PORT:-8080}:8080"
+      - "127.0.0.1:${PORT:-8080}:8080"
     env_file:
       - .env
     environment:
