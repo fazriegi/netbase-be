@@ -4,33 +4,38 @@ services:
     container_name: netbase-db
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER}
+      POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${DB_NAME:-netbase}
       TZ: Asia/Jakarta
     ports:
-      - "${DB_PORT}:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       # Persist PostgreSQL data locally
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-netbase}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - netbase-network
 
   migrate:
     image: migrate/migrate
     container_name: netbase-migrate
+    restart: "no"
     volumes:
       - ./db/migrations:/migrations
     command:
       - -path=/migrations
-      - -database=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - -database=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-netbase}?sslmode=${DB_SSLMODE:-disable}
       - up
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - netbase-network
 
   web:
     build:
@@ -39,12 +44,12 @@ services:
     container_name: netbase-web
     restart: always
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-8080}:8080"
     env_file:
       - .env
     environment:
       - TZ=Asia/Jakarta
-      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=${DB_SSLMODE}
+      - DATABASE_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-netbase}?sslmode=${DB_SSLMODE:-disable}
     volumes:
       - ./log:/app/log
     depends_on:
@@ -52,6 +57,12 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    networks:
+      - netbase-network
+
+networks:
+  netbase-network:
+    driver: bridge
 
 volumes:
   postgres_data:
