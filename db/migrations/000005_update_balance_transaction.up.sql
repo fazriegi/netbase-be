@@ -1,0 +1,1 @@
+ALTER TABLE transactions ADD COLUMN update_balance BOOLEAN NOT NULL DEFAULT TRUE;

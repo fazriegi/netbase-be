@@ -194,6 +194,7 @@ func (u *transactionUsecase) Create(ctx context.Context, req *domain.CreateTrans
 		Amount:          *req.Amount,
 		TransactionDate: txDate,
 		Notes:           req.Notes,
+		UpdateBalance:   req.UpdateBalance,
 	}
 
 	err = u.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
@@ -202,9 +203,11 @@ func (u *transactionUsecase) Create(ctx context.Context, req *domain.CreateTrans
 			return err
 		}
 
-		err = u.applyCashflowEffect(txCtx, category.BaseType, txDB.Amount, txDB.AssetID, txDB.LiabilityID, userID)
-		if err != nil {
-			return err
+		if req.UpdateBalance {
+			err = u.applyCashflowEffect(txCtx, category.BaseType, txDB.Amount, txDB.AssetID, txDB.LiabilityID, userID)
+			if err != nil {
+				return err
+			}
 		}
 
 		var assetIDs []uuid.UUID
@@ -245,6 +248,7 @@ func (u *transactionUsecase) Update(ctx context.Context, req *domain.CreateTrans
 		Amount:          *req.Amount,
 		TransactionDate: txDate,
 		Notes:           req.Notes,
+		UpdateBalance:   req.UpdateBalance,
 	}
 
 	err = u.txManager.WithTransaction(ctx, func(txCtx context.Context) error {
@@ -263,9 +267,11 @@ func (u *transactionUsecase) Update(ctx context.Context, req *domain.CreateTrans
 			return err
 		}
 
-		err = u.revertCashflowEffect(txCtx, oldCategory.BaseType, oldTx.Amount, oldTx.AssetID, oldTx.LiabilityID, userID)
-		if err != nil {
-			return err
+		if oldTx.UpdateBalance {
+			err = u.revertCashflowEffect(txCtx, oldCategory.BaseType, oldTx.Amount, oldTx.AssetID, oldTx.LiabilityID, userID)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = u.repo.Update(txCtx, txDB)
@@ -273,9 +279,11 @@ func (u *transactionUsecase) Update(ctx context.Context, req *domain.CreateTrans
 			return err
 		}
 
-		err = u.applyCashflowEffect(txCtx, newCategory.BaseType, txDB.Amount, txDB.AssetID, txDB.LiabilityID, userID)
-		if err != nil {
-			return err
+		if req.UpdateBalance {
+			err = u.applyCashflowEffect(txCtx, newCategory.BaseType, txDB.Amount, txDB.AssetID, txDB.LiabilityID, userID)
+			if err != nil {
+				return err
+			}
 		}
 
 		var assetIDs []uuid.UUID
@@ -316,9 +324,11 @@ func (u *transactionUsecase) Delete(ctx context.Context, id uuid.UUID) (resp pkg
 			return err
 		}
 
-		err = u.revertCashflowEffect(txCtx, oldCategory.BaseType, oldTx.Amount, oldTx.AssetID, oldTx.LiabilityID, userID)
-		if err != nil {
-			return err
+		if oldTx.UpdateBalance {
+			err = u.revertCashflowEffect(txCtx, oldCategory.BaseType, oldTx.Amount, oldTx.AssetID, oldTx.LiabilityID, userID)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = u.repo.Delete(txCtx, id, userID)

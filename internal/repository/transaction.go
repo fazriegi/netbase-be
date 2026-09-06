@@ -284,6 +284,7 @@ func (r *transactionRepository) GetByID(ctx context.Context, id, userID uuid.UUI
 			transactions.amount, 
 			transactions.transaction_date, 
 			transactions.notes,
+			transactions.update_balance,
 			transactions.created_at
 		FROM transactions 
 		JOIN transaction_categories tc ON tc.id = transactions.category_id AND tc.user_id = transactions.user_id
@@ -310,8 +311,8 @@ func (r *transactionRepository) Delete(ctx context.Context, id, userID uuid.UUID
 func (r *transactionRepository) Insert(ctx context.Context, data *domain.TransactionDB) error {
 	db := getQueryer(ctx, r.db)
 	query := `
-		INSERT INTO transactions (user_id, asset_id, liability_id, category_id, amount, transaction_date, notes) 
-		VALUES (:user_id, :asset_id, :liability_id, :category_id, :amount, :transaction_date, :notes)
+		INSERT INTO transactions (user_id, asset_id, liability_id, category_id, amount, transaction_date, notes, update_balance) 
+		VALUES (:user_id, :asset_id, :liability_id, :category_id, :amount, :transaction_date, :notes, :update_balance)
 	`
 	_, err := db.NamedExecContext(ctx, query, data)
 
@@ -322,7 +323,7 @@ func (r *transactionRepository) Update(ctx context.Context, data *domain.Transac
 	db := getQueryer(ctx, r.db)
 	query := `
 		UPDATE transactions 
-		SET asset_id = :asset_id, liability_id = :liability_id, category_id = :category_id, amount = :amount, transaction_date = :transaction_date, notes = :notes, updated_at = now() 
+		SET asset_id = :asset_id, liability_id = :liability_id, category_id = :category_id, amount = :amount, transaction_date = :transaction_date, notes = :notes, update_balance = :update_balance, updated_at = now() 
 		WHERE id = :id AND user_id = :user_id
 	`
 	_, err := db.NamedExecContext(ctx, query, data)

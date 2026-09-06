@@ -18,6 +18,7 @@ type TransactionDB struct {
 	Amount          decimal.Decimal `db:"amount"`
 	TransactionDate time.Time       `db:"transaction_date"`
 	Notes           *string         `db:"notes"`
+	UpdateBalance   bool            `db:"update_balance"`
 	CreatedAt       time.Time       `db:"created_at"`
 	UpdatedAt       time.Time       `db:"updated_at"`
 }
@@ -35,6 +36,7 @@ type Transaction struct {
 	Amount          decimal.Decimal `db:"amount" json:"amount"`
 	TransactionDate time.Time       `db:"transaction_date" json:"transaction_date"`
 	Notes           *string         `db:"notes" json:"notes"`
+	UpdateBalance   bool            `db:"update_balance" json:"update_balance"`
 	CreatedAt       time.Time       `db:"created_at" json:"-"`
 }
 
@@ -47,6 +49,7 @@ type CreateTransaction struct {
 	Amount          *decimal.Decimal `json:"amount" validate:"required"`
 	TransactionDate string           `json:"transaction_date" validate:"required"`
 	Notes           *string          `json:"notes"`
+	UpdateBalance   bool             `json:"update_balance"`
 }
 
 type ListTransactionRequest struct {
