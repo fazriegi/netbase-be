@@ -28,7 +28,7 @@ func NewNetworthUsecase(log *log.Logger, repo domain.NetworthRepository) Networt
 func (u *networthUsecase) GetCurrent(ctx context.Context) (resp pkg.Response) {
 	userId := ctx.Value("user_id").(uuid.UUID)
 
-	networth, err := u.repo.GetCurrent(ctx, userId)
+	networth, err := u.repo.GetCurrent(ctx, userId, nil)
 	if err != nil {
 		if err.Error() != constant.ErrNotFound {
 			u.log.Printf("[ERROR] repo.GetCurrent: %s", err.Error())
@@ -44,4 +44,3 @@ func (u *networthUsecase) GetCurrent(ctx context.Context) (resp pkg.Response) {
 func (u *networthUsecase) CalculateDailyNetworth(ctx context.Context) error {
 	return u.repo.Calculate(ctx)
 }
-

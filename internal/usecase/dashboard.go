@@ -105,7 +105,7 @@ func (u *dashboardUsecase) GetActiveMilestone(ctx context.Context) (resp pkg.Res
 		return pkg.NewResponse(http.StatusOK, "No active milestone", nil, nil)
 	}
 
-	networthData, err := u.nwRepo.GetCurrent(ctx, userId)
+	networthData, err := u.nwRepo.GetCurrent(ctx, userId, nil)
 	if err != nil {
 		u.log.Printf("[ERROR] nwRepo.GetCurrent: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
@@ -147,7 +147,14 @@ func (u *dashboardUsecase) GetActiveMilestone(ctx context.Context) (resp pkg.Res
 func (u *dashboardUsecase) GetNetworthSummary(ctx context.Context) (resp pkg.Response) {
 	userId := ctx.Value("user_id").(uuid.UUID)
 
-	networthData, err := u.nwRepo.GetCurrent(ctx, userId)
+	userSettings, err := u.userRepo.GetUserSettings(ctx, &userId)
+	var cycleStartDate *time.Time
+	if err == nil && userSettings != nil {
+		startDate, _ := pkg.CreateDateRange(time.Now(), userSettings.CycleStartDay)
+		cycleStartDate = &startDate
+	}
+
+	networthData, err := u.nwRepo.GetCurrent(ctx, userId, cycleStartDate)
 	if err != nil {
 		u.log.Printf("[ERROR] nwRepo.GetCurrent: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
@@ -195,6 +202,10 @@ func (u *dashboardUsecase) GetNetworthHistory(ctx context.Context, req *domain.D
 		changePercentage := decimal.Zero
 		if !first.IsZero() {
 			changePercentage = changeAmount.Div(first.Abs()).Mul(decimal.NewFromInt(100)).Round(2)
+		} else if changeAmount.GreaterThan(decimal.Zero) {
+			changePercentage = decimal.NewFromInt(100)
+		} else if changeAmount.LessThan(decimal.Zero) {
+			changePercentage = decimal.NewFromInt(-100)
 		}
 
 		dataResponse.Summary.ChangeAmount = changeAmount

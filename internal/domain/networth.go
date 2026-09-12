@@ -27,6 +27,6 @@ type ListNetworthHistoryRequest struct {
 
 type NetworthRepository interface {
 	Calculate(ctx context.Context) error
-	GetCurrent(ctx context.Context, userId uuid.UUID) (*Networth, error)
+	GetCurrent(ctx context.Context, userId uuid.UUID, cycleStartDate *time.Time) (*Networth, error)
 	GetNetworthHistory(ctx context.Context, req *ListNetworthHistoryRequest) (*[]Networth, error)
 }
