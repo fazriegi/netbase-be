@@ -44,7 +44,7 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 	milestoneUC := usecase.NewMilestoneUsecase(logger, milestoneRepo, networthRepo)
 
 	// DASHBOARD
-	dashboardUC := usecase.NewDashboardUsecase(logger, transactionRepo, milestoneRepo, networthRepo)
+	dashboardUC := usecase.NewDashboardUsecase(logger, transactionRepo, milestoneRepo, networthRepo, userRepo)
 
 	mux := http.NewServeMux()
 

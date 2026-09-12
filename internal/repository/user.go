@@ -212,3 +212,26 @@ func (r *userRepo) SeedDefaultCategories(ctx context.Context, userID uuid.UUID) 
 
 	return nil
 }
+
+func (r *userRepo) GetUserSettings(ctx context.Context, userID *uuid.UUID) (*domain.UserSettings, error) {
+	db := getQueryer(ctx, r.db)
+
+	var userSettings domain.UserSettings
+
+	query := `SELECT cycle_start_day FROM users WHERE id = $1`
+
+	err := db.GetContext(ctx, &userSettings, query, userID)
+	if err == sql.ErrNoRows {
+		return nil, errors.New(constant.ErrUserNotFound)
+	}
+
+	return &userSettings, err
+}
+
+func (r *userRepo) UpdateUserSettings(ctx context.Context, data *domain.UserSettings) error {
+	db := getQueryer(ctx, r.db)
+	query := `UPDATE users SET cycle_start_day = :cycle_start_day, updated_at = now() WHERE id = :id`
+	_, err := db.NamedExecContext(ctx, query, data)
+
+	return err
+}

@@ -37,6 +37,11 @@ type RefreshToken struct {
 	IPAddress  string
 }
 
+type UserSettings struct {
+	ID            uuid.UUID `db:"id" json:"-"`
+	CycleStartDay int       `db:"cycle_start_day" json:"cycle_start_day"`
+}
+
 type UserRepository interface {
 	Create(ctx context.Context, user *User) (uuid.UUID, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
@@ -47,4 +52,6 @@ type UserRepository interface {
 	SeedDefaultCategories(ctx context.Context, userID uuid.UUID) error
 	RevokeRefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string) error
 	RemoveExpiredToken(ctx context.Context, userID *uuid.UUID) error
+	GetUserSettings(ctx context.Context, userID *uuid.UUID) (*UserSettings, error)
+	UpdateUserSettings(ctx context.Context, data *UserSettings) error
 }
