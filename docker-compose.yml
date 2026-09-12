@@ -38,6 +38,7 @@ services:
       - netbase-network
 
   web:
+    image: ghcr.io/fazriegi/netbase-be:latest
     build:
       context: .
       dockerfile: Dockerfile
