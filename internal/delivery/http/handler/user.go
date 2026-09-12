@@ -33,6 +33,8 @@ func NewUserHandler(mux *http.ServeMux, uc usecase.UserUsecase, logger *log.Logg
 	mux.HandleFunc("POST /v1/logout", handler.Logout)
 
 	mux.Handle("GET /v1/profile", middleware.MiddlewareAuth(http.HandlerFunc(handler.Profile)))
+	mux.Handle("GET /v1/users/settings", middleware.MiddlewareAuth(http.HandlerFunc(handler.GetSettings)))
+	mux.Handle("PUT /v1/users/settings", middleware.MiddlewareAuth(http.HandlerFunc(handler.UpdateSettings)))
 }
 
 func (h *UserHandler) setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
@@ -201,4 +203,32 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	h.setAuthCookies(w, "", "")
 
 	response.HTTP(w)
+}
+
+func (h *UserHandler) GetSettings(w http.ResponseWriter, r *http.Request) {
+	response := h.usecase.GetSettings(r.Context())
+	response.HTTP(w)
+}
+
+func (h *UserHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	var req domain.UserSettings
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		pkg.NewResponse(http.StatusBadRequest, constant.ErrInvalidJson, nil, nil).HTTP(w)
+		return
+	}
+
+	// validation
+	validationErr := validator.ValidateRequest(&req)
+
+	if len(validationErr) > 0 {
+		errResponse := map[string]any{
+			"errors": validationErr,
+		}
+
+		pkg.NewResponse(http.StatusUnprocessableEntity, constant.ErrValidation, errResponse, nil).HTTP(w)
+		return
+	}
+
+	h.usecase.UpdateSettings(r.Context(), &req).HTTP(w)
 }

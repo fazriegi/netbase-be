@@ -27,6 +27,8 @@ type UserUsecase interface {
 	Profile(ctx context.Context, accessToken string) (resp pkg.Response)
 	Logout(ctx context.Context, accessToken, refreshToken string) (resp pkg.Response)
 	CleanupExpiredTokens(ctx context.Context) error
+	GetSettings(ctx context.Context) (resp pkg.Response)
+	UpdateSettings(ctx context.Context, req *domain.UserSettings) (resp pkg.Response)
 }
 
 func NewUserUsecase(log *log.Logger, repo domain.UserRepository, tx domain.TransactionManager) UserUsecase {
@@ -228,4 +230,40 @@ func (uc *userUsecase) Logout(ctx context.Context, accessToken, refreshToken str
 
 func (uc *userUsecase) CleanupExpiredTokens(ctx context.Context) error {
 	return uc.repo.RemoveExpiredToken(ctx, nil)
+}
+
+func (uc *userUsecase) GetSettings(ctx context.Context) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+
+	userSettings, err := uc.repo.GetUserSettings(ctx, &userId)
+	if err != nil {
+		if err.Error() != constant.ErrUserNotFound {
+			uc.log.Printf("[ERROR] repo.GetUserSettings: %s", err.Error())
+			return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+		}
+
+		return pkg.NewResponse(http.StatusNotFound, constant.ErrUserNotFound, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", userSettings, nil)
+}
+
+func (uc *userUsecase) UpdateSettings(ctx context.Context, req *domain.UserSettings) (resp pkg.Response) {
+	userId := ctx.Value("user_id").(uuid.UUID)
+	req.ID = userId
+
+	if req.CycleStartDay < 1 || req.CycleStartDay > 31 {
+		return pkg.NewResponse(http.StatusBadRequest, "Invalid cycle start day", nil, nil)
+	}
+
+	err := uc.tx.WithTransaction(ctx, func(txCtx context.Context) error {
+		return uc.repo.UpdateUserSettings(txCtx, req)
+	})
+
+	if err != nil {
+		uc.log.Printf("[ERROR] UpdateUserSettings transaction failed: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
 }
