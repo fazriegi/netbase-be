@@ -28,7 +28,7 @@ func NewMilestoneUsecase(log *log.Logger, repo domain.MilestoneRepository, nwRep
 func (u *milestoneUsecase) Create(ctx context.Context, req *domain.CreateMilestoneRequest) (resp pkg.Response) {
 	userId := ctx.Value("user_id").(uuid.UUID)
 
-	networth, err := u.nwRepo.GetCurrent(ctx, userId)
+	networth, err := u.nwRepo.GetCurrent(ctx, userId, nil)
 	if err != nil {
 		u.log.Printf("[ERROR] nwRepo.GetCurrent: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)

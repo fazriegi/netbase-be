@@ -56,9 +56,15 @@ func (r *networthRepository) Calculate(ctx context.Context) error {
 	return err
 }
 
-func (r *networthRepository) GetCurrent(ctx context.Context, userId uuid.UUID) (*domain.Networth, error) {
+func (r *networthRepository) GetCurrent(ctx context.Context, userId uuid.UUID, cycleStartDate *time.Time) (*domain.Networth, error) {
 	db := getQueryer(ctx, r.db)
 	var networth domain.Networth
+
+	cutoffDate := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC)
+	if cycleStartDate != nil && !cycleStartDate.IsZero() {
+		cutoffDate = *cycleStartDate
+	}
+
 	query := `
 		WITH realtime_assets AS (
 			SELECT COALESCE(SUM(current_value), 0) AS total_assets
@@ -70,11 +76,11 @@ func (r *networthRepository) GetCurrent(ctx context.Context, userId uuid.UUID) (
 			FROM liabilities
 			WHERE user_id = $1 AND remaining_balance > 0
 		),
-		last_month_snapshot AS (
+		last_cycle_snapshot AS (
 			SELECT net_worth
 			FROM net_worth_histories
 			WHERE user_id = $1 
-			AND recorded_date < DATE_TRUNC('month', CURRENT_DATE)
+			AND recorded_date < $2
 			ORDER BY recorded_date DESC
 			LIMIT 1
 		)
@@ -83,13 +89,14 @@ func (r *networthRepository) GetCurrent(ctx context.Context, userId uuid.UUID) (
 			ra.total_assets,
 			rl.total_liabilities,
 			CASE 
-				WHEN lms.net_worth IS NULL OR lms.net_worth = 0 THEN 0
-				ELSE (((ra.total_assets - rl.total_liabilities) - lms.net_worth) / lms.net_worth) * 100
+				WHEN lms.net_worth IS NULL OR lms.net_worth = 0 THEN
+					CASE WHEN (ra.total_assets - rl.total_liabilities) > 0 THEN 100 ELSE 0 END
+				ELSE (((ra.total_assets - rl.total_liabilities) - lms.net_worth) / ABS(lms.net_worth)) * 100
 			END AS growth_percentage
 		FROM realtime_assets ra
 		CROSS JOIN realtime_liabilities rl
-		LEFT JOIN last_month_snapshot lms ON TRUE;`
-	err := db.GetContext(ctx, &networth, query, userId)
+		LEFT JOIN last_cycle_snapshot lms ON TRUE;`
+	err := db.GetContext(ctx, &networth, query, userId, cutoffDate)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrNotFound)
 	}
