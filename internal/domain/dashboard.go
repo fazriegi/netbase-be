@@ -7,6 +7,8 @@ import (
 
 type DashboardCashflowResponse struct {
 	Period          string          `json:"period"`
+	StartDate       string          `json:"start_date"`
+	EndDate         string          `json:"end_date"`
 	TotalInflow     decimal.Decimal `json:"total_inflow"`
 	TotalOutflow    decimal.Decimal `json:"total_outflow"`
 	NetFreeCashflow decimal.Decimal `json:"net_free_cashflow"`

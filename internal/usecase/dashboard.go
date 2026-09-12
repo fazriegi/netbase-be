@@ -18,6 +18,7 @@ type dashboardUsecase struct {
 	transRepo domain.TransactionRepository
 	mlRepo    domain.MilestoneRepository
 	nwRepo    domain.NetworthRepository
+	userRepo  domain.UserRepository
 }
 
 type DashboardUsecase interface {
@@ -32,26 +33,40 @@ func NewDashboardUsecase(
 	transRepo domain.TransactionRepository,
 	mlRepo domain.MilestoneRepository,
 	nwRepo domain.NetworthRepository,
+	userRepo domain.UserRepository,
 ) DashboardUsecase {
-	return &dashboardUsecase{log, transRepo, mlRepo, nwRepo}
+	return &dashboardUsecase{log, transRepo, mlRepo, nwRepo, userRepo}
 }
 
 func (u *dashboardUsecase) GetCashflow(ctx context.Context, period string) (resp pkg.Response) {
 	userId := ctx.Value("user_id").(uuid.UUID)
 
 	realPeriod := period
+	periodTime := time.Now()
 	if period != "" {
-		timeParsed, err := time.Parse("2006-01", period)
+		var err error
+		periodTime, err = time.Parse("2006-01", period)
 		if err != nil {
 			return pkg.NewResponse(http.StatusBadRequest, constant.ErrInvalidRequest, nil, nil)
 		}
-		period = timeParsed.Format("2006-01-02")
+		period = periodTime.Format("2006-01-02")
 	}
 
+	userSettings, err := u.userRepo.GetUserSettings(ctx, &userId)
+	if err != nil {
+		u.log.Printf("[ERROR] userRepo.GetUserSettings: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	startDate, endDate := pkg.CreateDateRange(periodTime, userSettings.CycleStartDay)
+	startDateStr := startDate.Format("2006-01-02")
+	endDateStr := endDate.Format("2006-01-02")
+
 	summary, err := u.transRepo.GetSummary(ctx, &domain.ListTransactionRequest{
-		UserID:     userId,
-		FilterType: "month",
-		DateStr:    period,
+		UserID:       userId,
+		FilterType:   "range",
+		StartDateStr: startDateStr,
+		EndDateStr:   endDateStr,
 	})
 	if err != nil {
 		u.log.Printf("[ERROR] transRepo.GetSummary: %s", err.Error())
@@ -64,6 +79,8 @@ func (u *dashboardUsecase) GetCashflow(ctx context.Context, period string) (resp
 	}
 	dataResponse := domain.DashboardCashflowResponse{
 		Period:          realPeriod,
+		StartDate:       startDateStr,
+		EndDate:         endDateStr,
 		TotalInflow:     summary.Income,
 		TotalOutflow:    summary.Expense,
 		NetFreeCashflow: summary.Net,
