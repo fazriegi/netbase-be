@@ -41,27 +41,32 @@ func NewDashboardUsecase(
 func (u *dashboardUsecase) GetCashflow(ctx context.Context, period string) (resp pkg.Response) {
 	userId := ctx.Value("user_id").(uuid.UUID)
 
-	realPeriod := period
-	periodTime := time.Now()
-	if period != "" {
-		var err error
-		periodTime, err = time.Parse("2006-01", period)
-		if err != nil {
-			return pkg.NewResponse(http.StatusBadRequest, constant.ErrInvalidRequest, nil, nil)
-		}
-		period = periodTime.Format("2006-01-02")
-	}
-
 	userSettings, err := u.userRepo.GetUserSettings(ctx, &userId)
 	if err != nil {
 		u.log.Printf("[ERROR] userRepo.GetUserSettings: %s", err.Error())
 		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
 	}
 
+	realPeriod := period
+	now := time.Now()
+	periodTime := now
+	if period != "" {
+		parsedTime, err := time.Parse("2006-01", period)
+		if err != nil {
+			return pkg.NewResponse(http.StatusBadRequest, constant.ErrInvalidRequest, nil, nil)
+		}
+
+		if parsedTime.Year() == now.Year() && parsedTime.Month() == now.Month() {
+			periodTime = now
+		} else {
+			periodTime = time.Date(parsedTime.Year(), parsedTime.Month(), userSettings.CycleStartDay, 0, 0, 0, 0, time.UTC)
+		}
+		period = periodTime.Format("2006-01-02")
+	}
+
 	startDate, endDate := pkg.CreateDateRange(periodTime, userSettings.CycleStartDay)
 	startDateStr := startDate.Format("2006-01-02")
 	endDateStr := endDate.Format("2006-01-02")
-
 	summary, err := u.transRepo.GetSummary(ctx, &domain.ListTransactionRequest{
 		UserID:       userId,
 		FilterType:   "range",
