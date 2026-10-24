@@ -58,6 +58,7 @@ type ListTransactionRequest struct {
 	CategoryName string `query:"category_name"`
 	CategoryType string `query:"category_type"`
 	Notes        string `query:"notes"`
+	Search       string `query:"search"`
 	FilterType   string `query:"filter_type"` // "week", "month", "year", "range"
 	DateStr      string `query:"date"`        // reference date YYYY-MM-DD
 	StartDateStr string `query:"start_date"`  // range start date YYYY-MM-DD
