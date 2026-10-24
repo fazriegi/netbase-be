@@ -105,6 +105,15 @@ func (r *transactionRepository) transactionFilter(req *domain.ListTransactionReq
 		query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
 	}
 
+	if req.Search != "" {
+		query += ` AND (
+			tc.name ILIKE :search 
+			OR transactions.notes ILIKE :search 
+			OR assets.name ILIKE :search 
+			OR liabilities.name ILIKE :search
+		)`
+	}
+
 	return query
 }
 
@@ -156,9 +165,8 @@ func (r *transactionRepository) List(ctx context.Context, req *domain.ListTransa
 
 	arg := map[string]interface{}{
 		"user_id":       req.UserID,
-		"category_name": "%" + req.CategoryName + "%",
 		"category_type": req.CategoryType,
-		"notes":         "%" + req.Notes + "%",
+		"search":        "%" + req.Search + "%",
 		"ref_date":      refDate,
 		"start_date":    req.StartDateStr,
 		"end_date":      req.EndDateStr,
@@ -230,6 +238,8 @@ func (r *transactionRepository) GetSummary(ctx context.Context, req *domain.List
 			COALESCE(SUM(CASE WHEN tc.base_type = 'expense' THEN transactions.amount ELSE 0 END), 0) as expense
 		FROM transactions 
 		JOIN transaction_categories tc ON tc.id = transactions.category_id AND tc.user_id = transactions.user_id
+		LEFT JOIN assets ON assets.id = transactions.asset_id AND assets.user_id = transactions.user_id
+		LEFT JOIN liabilities ON liabilities.id = transactions.liability_id AND liabilities.user_id = transactions.user_id
 		WHERE transactions.user_id = :user_id
 	`
 
@@ -245,8 +255,7 @@ func (r *transactionRepository) GetSummary(ctx context.Context, req *domain.List
 	rows, err := db.NamedQueryContext(ctx, query, map[string]interface{}{
 		"user_id":       req.UserID,
 		"category_type": req.CategoryType,
-		"category_name": "%" + req.CategoryName + "%",
-		"notes":         "%" + req.Notes + "%",
+		"search":        "%" + req.Search + "%",
 		"ref_date":      refDate,
 		"start_date":    req.StartDateStr,
 		"end_date":      req.EndDateStr,

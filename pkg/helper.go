@@ -25,19 +25,32 @@ func CreateDateRange(inputTime time.Time, cycleStartDay int) (startDate time.Tim
 		return start, end
 	}
 
-	prevMonthDate := time.Date(year, month-1, 1, 0, 0, 0, 0, time.UTC)
-	prevYear := prevMonthDate.Year()
-	prevMonth := prevMonthDate.Month()
+	var startYear, endYear int
+	var startMonth, endMonth time.Month
+
+	if inputTime.Day() >= cycleStartDay {
+		startYear = year
+		startMonth = month
+		nextMonthDate := time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+		endYear = nextMonthDate.Year()
+		endMonth = nextMonthDate.Month()
+	} else {
+		prevMonthDate := time.Date(year, month-1, 1, 0, 0, 0, 0, time.UTC)
+		startYear = prevMonthDate.Year()
+		startMonth = prevMonthDate.Month()
+		endYear = year
+		endMonth = month
+	}
 
 	// Clamping Start Date (misal cycleStartDay = 31, tapi Februari cuma 28 hari)
-	daysInPrev := DaysInMonth(prevYear, prevMonth)
-	startDay := min(cycleStartDay, daysInPrev)
-	start := time.Date(prevYear, prevMonth, startDay, 0, 0, 0, 0, time.UTC)
+	daysInStart := DaysInMonth(startYear, startMonth)
+	startDay := min(cycleStartDay, daysInStart)
+	start := time.Date(startYear, startMonth, startDay, 0, 0, 0, 0, time.UTC)
 
 	// Clamping End Date (cycleStartDay - 1, diclamp ke max hari di bulan target)
-	daysInCurr := DaysInMonth(year, month)
-	endDay := min(cycleStartDay-1, daysInCurr)
-	end := time.Date(year, month, endDay, 23, 59, 59, 0, time.UTC)
+	daysInEnd := DaysInMonth(endYear, endMonth)
+	endDay := min(cycleStartDay-1, daysInEnd)
+	end := time.Date(endYear, endMonth, endDay, 23, 59, 59, 0, time.UTC)
 
 	return start, end
 }
