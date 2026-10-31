@@ -102,7 +102,9 @@ func (r *transactionRepository) transactionFilter(req *domain.ListTransactionReq
 	case "year":
 		query += ` AND DATE_TRUNC('year', transactions.transaction_date) = DATE_TRUNC('year', CAST(:ref_date AS date))`
 	case "range":
-		query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
+		if req.StartDateStr != "" && req.EndDateStr != "" {
+			query += ` AND DATE_TRUNC('day', transactions.transaction_date) BETWEEN DATE_TRUNC('day', CAST(:start_date AS date)) AND DATE_TRUNC('day', CAST(:end_date AS date))`
+		}
 	}
 
 	if req.Search != "" {
@@ -338,4 +340,65 @@ func (r *transactionRepository) Update(ctx context.Context, data *domain.Transac
 	_, err := db.NamedExecContext(ctx, query, data)
 
 	return err
+}
+
+func (r *transactionRepository) ListAllocation(ctx context.Context, req *domain.ListTransactionRequest) (*[]domain.AllocationCategory, error) {
+	db := getQueryer(ctx, r.db)
+
+	query := `
+		SELECT 
+			tc.id, 
+			tc.name, 
+			tc.base_type, 
+			COALESCE(SUM(transactions.amount), 0) AS amount, 
+			COUNT(transactions.id) AS count
+		FROM transactions
+		JOIN transaction_categories tc ON tc.id = transactions.category_id AND tc.user_id = transactions.user_id
+		LEFT JOIN assets ON assets.id = transactions.asset_id AND assets.user_id = transactions.user_id
+		LEFT JOIN liabilities ON liabilities.id = transactions.liability_id AND liabilities.user_id = transactions.user_id
+		WHERE transactions.user_id = :user_id
+	`
+
+	var refDate string
+	if req.DateStr != "" {
+		refDate = req.DateStr
+	} else {
+		refDate = time.Now().Format("2006-01-02")
+	}
+
+	query += r.transactionFilter(req)
+
+	query += ` GROUP BY tc.base_type, tc.id, tc.name ORDER BY amount DESC`
+
+	rows, err := db.NamedQueryContext(ctx, query, map[string]interface{}{
+		"user_id":       req.UserID,
+		"category_name": "%" + req.CategoryName + "%",
+		"notes":         "%" + req.Notes + "%",
+		"category_type": req.CategoryType,
+		"search":        "%" + req.Search + "%",
+		"ref_date":      refDate,
+		"start_date":    req.StartDateStr,
+		"end_date":      req.EndDateStr,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	allocations := make([]domain.AllocationCategory, 0)
+
+	for rows.Next() {
+		var allocation domain.AllocationCategory
+		err := rows.StructScan(&allocation)
+		if err != nil {
+			return nil, err
+		}
+		allocations = append(allocations, allocation)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &allocations, nil
 }

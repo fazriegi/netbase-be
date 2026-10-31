@@ -91,6 +91,22 @@ type ListCategoryRequest struct {
 	Search   string `query:"search"`
 }
 
+type CashflowAllocation struct {
+	Income            decimal.Decimal      `json:"income"`
+	Expense           decimal.Decimal      `json:"expense"`
+	Net               decimal.Decimal      `json:"net"`
+	IncomeCategories  []AllocationCategory `json:"income_categories"`
+	ExpenseCategories []AllocationCategory `json:"expense_categories"`
+}
+
+type AllocationCategory struct {
+	ID       uuid.UUID       `db:"id" json:"id"`
+	Name     string          `db:"name" json:"name"`
+	BaseType string          `db:"base_type" json:"base_type"`
+	Amount   decimal.Decimal `db:"amount" json:"amount"`
+	Count    int64           `db:"count" json:"count"`
+}
+
 type TransactionRepository interface {
 	ListCategory(ctx context.Context, req *ListCategoryRequest) (*[]Category, error)
 	GetCategoryByID(ctx context.Context, id, userID uuid.UUID) (*Category, error)
@@ -102,4 +118,5 @@ type TransactionRepository interface {
 	Delete(ctx context.Context, id, userID uuid.UUID) error
 	Insert(ctx context.Context, data *TransactionDB) error
 	Update(ctx context.Context, data *TransactionDB) error
+	ListAllocation(ctx context.Context, req *ListTransactionRequest) (*[]AllocationCategory, error)
 }
