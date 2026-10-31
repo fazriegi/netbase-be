@@ -34,6 +34,7 @@ type TransactionUsecase interface {
 	Create(ctx context.Context, req *domain.CreateTransaction) (resp pkg.Response)
 	Update(ctx context.Context, req *domain.CreateTransaction) (resp pkg.Response)
 	Delete(ctx context.Context, id uuid.UUID) (resp pkg.Response)
+	GetAllocation(ctx context.Context, req *domain.ListTransactionRequest) (resp pkg.Response)
 }
 
 func NewTransactionUsecase(
@@ -519,4 +520,42 @@ func appendUniqueUUID(slice []uuid.UUID, id *uuid.UUID) []uuid.UUID {
 		}
 	}
 	return append(slice, *id)
+}
+
+func (u *transactionUsecase) GetAllocation(ctx context.Context, req *domain.ListTransactionRequest) (resp pkg.Response) {
+	userID := ctx.Value("user_id").(uuid.UUID)
+	req.UserID = userID
+
+	allocations, err := u.repo.ListAllocation(ctx, req)
+	if err != nil {
+		u.log.Printf("[ERROR] repo.ListAllocation: %s", err.Error())
+		return pkg.NewResponse(http.StatusInternalServerError, constant.ErrServer, nil, nil)
+	}
+
+	totalIncome := decimal.Zero
+	totalExpense := decimal.Zero
+	incomeCats := make([]domain.AllocationCategory, 0)
+	expenseCats := make([]domain.AllocationCategory, 0)
+
+	if allocations != nil {
+		for _, v := range *allocations {
+			if v.BaseType == "income" {
+				totalIncome = totalIncome.Add(v.Amount)
+				incomeCats = append(incomeCats, v)
+			} else {
+				totalExpense = totalExpense.Add(v.Amount)
+				expenseCats = append(expenseCats, v)
+			}
+		}
+	}
+
+	result := domain.CashflowAllocation{
+		Income:            totalIncome,
+		Expense:           totalExpense,
+		Net:               totalIncome.Sub(totalExpense),
+		IncomeCategories:  incomeCats,
+		ExpenseCategories: expenseCats,
+	}
+
+	return pkg.NewResponse(http.StatusOK, "Success", result, nil)
 }
