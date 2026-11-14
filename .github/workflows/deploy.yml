@@ -117,7 +117,7 @@ jobs:
                   - netbase-network
 
               migrate:
-                image: migrate/migrate:v4.18.2
+                image: migrate/migrate:latest
                 container_name: netbase-migrate
                 restart: "no"
                 volumes:

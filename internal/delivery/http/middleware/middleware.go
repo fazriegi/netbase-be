@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"errors"
+	"io"
 	"mime"
 	"net"
 	"net/http"
@@ -16,6 +18,36 @@ import (
 )
 
 const MaxRequestBodyBytes = 1 << 20 // 1 MB
+
+var errRequestBodyTooLarge = errors.New("http: request body too large")
+
+// bodyLimitReadCloser caps request body reads without touching http.ResponseWriter headers,
+// avoiding the net/http MaxBytesReader header race (GO-2026-6859).
+type bodyLimitReadCloser struct {
+	rc        io.ReadCloser
+	remaining int64
+}
+
+func (b *bodyLimitReadCloser) Read(p []byte) (int, error) {
+	if b.remaining <= 0 {
+		var scratch [1]byte
+		n, err := b.rc.Read(scratch[:])
+		if n > 0 {
+			return 0, errRequestBodyTooLarge
+		}
+		return 0, err
+	}
+	if int64(len(p)) > b.remaining {
+		p = p[:b.remaining]
+	}
+	n, err := b.rc.Read(p)
+	b.remaining -= int64(n)
+	return n, err
+}
+
+func (b *bodyLimitReadCloser) Close() error {
+	return b.rc.Close()
+}
 
 func MiddlewareAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,8 +86,15 @@ func RequestSecurity(allowedOrigins []string) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.ContentLength > MaxRequestBodyBytes {
+				pkg.NewResponse(http.StatusRequestEntityTooLarge, constant.ErrInvalidRequest, nil, nil).HTTP(w)
+				return
+			}
 			if r.Body != nil {
-				r.Body = http.MaxBytesReader(w, r.Body, MaxRequestBodyBytes)
+				r.Body = &bodyLimitReadCloser{
+					rc:        r.Body,
+					remaining: MaxRequestBodyBytes,
+				}
 			}
 
 			switch r.Method {
