@@ -53,6 +53,9 @@ func NewResponse(code int, message string, data any, paginationMeta *PaginationM
 
 func (r Response) HTTP(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(r.Status.Code)
 	json.NewEncoder(w).Encode(r)
 }

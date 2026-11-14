@@ -8,8 +8,8 @@ import (
 type Category struct {
 	Id       uuid.UUID `db:"id" json:"id"`
 	UserID   uuid.UUID `db:"user_id" json:"-"`
-	Name     string    `db:"name" json:"name"`
-	BaseType string    `db:"base_type" json:"base_type"`
+	Name     string    `db:"name" json:"name" validate:"required,max=255"`
+	BaseType string    `db:"base_type" json:"base_type" validate:"required,oneof=income expense"`
 }
 
 type LiquidAsset struct {
@@ -21,9 +21,9 @@ type LiquidAsset struct {
 
 type InvestmentAsset struct {
 	PlatformName string          `json:"platform_name" validate:"required"`
-	TickerSymbol string          `json:"ticker_symbol" validate:"required"`
-	AveragePrice decimal.Decimal `json:"average_price" validate:"required"`
-	Quantity     decimal.Decimal `json:"quantity" validate:"required"`
+	TickerSymbol string          `json:"ticker_symbol" validate:"required,ticker"`
+	AveragePrice decimal.Decimal `json:"average_price" validate:"required,decimal=gte=0"`
+	Quantity     decimal.Decimal `json:"quantity" validate:"required,decimal=gte=0"`
 }
 
 type PhysicalAsset struct {
@@ -40,8 +40,8 @@ type ShortTermLiability struct {
 }
 
 type LongTermLiability struct {
-	MonthlyInstallment decimal.Decimal `json:"monthly_installment" validate:"required"`
-	Tenor              int             `json:"tenor" validate:"required"`
+	MonthlyInstallment decimal.Decimal `json:"monthly_installment" validate:"required,decimal=gte=0"`
+	Tenor              int             `json:"tenor" validate:"required,gte=1"`
 	DueDate            int             `json:"due_date" validate:"required,number,lte=31,gte=1"`
 	InterestRatePA     decimal.Decimal `json:"interest_rate_pa"`
 	StartDate          string          `json:"start_date" validate:"required,datetime=2006-01-02"`

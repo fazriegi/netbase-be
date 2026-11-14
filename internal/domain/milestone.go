@@ -34,7 +34,7 @@ type Milestone struct {
 
 type CreateMilestoneRequest struct {
 	Title        string          `json:"title" validate:"required,max=255"`
-	TargetAmount decimal.Decimal `json:"target_amount" validate:"required,decimal"`
+	TargetAmount decimal.Decimal `json:"target_amount" validate:"required,decimal=gt=0"`
 }
 
 type GetMilestone struct {
@@ -46,5 +46,5 @@ type MilestoneRepository interface {
 	Insert(ctx context.Context, data *Milestone) error
 	GetCurrent(ctx context.Context, data *GetMilestone) (*Milestone, error)
 	Update(ctx context.Context, data *Milestone) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	Delete(ctx context.Context, id, userId uuid.UUID) error
 }

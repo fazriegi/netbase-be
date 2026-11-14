@@ -46,7 +46,7 @@ type CreateTransaction struct {
 	AssetID         *uuid.UUID       `json:"asset_id"`
 	LiabilityID     *uuid.UUID       `json:"liability_id"`
 	CategoryID      uuid.UUID        `json:"category_id" validate:"required"`
-	Amount          *decimal.Decimal `json:"amount" validate:"required"`
+	Amount          *decimal.Decimal `json:"amount" validate:"required,decimal=gt=0"`
 	TransactionDate string           `json:"transaction_date" validate:"required"`
 	Notes           *string          `json:"notes"`
 	UpdateBalance   bool             `json:"update_balance"`

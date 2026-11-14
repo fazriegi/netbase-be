@@ -175,6 +175,9 @@ func (r *liabilityRepository) GetByID(ctx context.Context, id, userId uuid.UUID)
 		FROM liabilities
 		JOIN liability_categories lc ON liabilities.user_id = lc.user_id AND liabilities.category_id = lc.id
 		WHERE liabilities.id = $1 AND liabilities.user_id = $2`
+	if isTransaction(ctx) {
+		query += ` FOR UPDATE OF liabilities`
+	}
 	err := db.GetContext(ctx, &liability, query, id, userId)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrNotFound)

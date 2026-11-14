@@ -1,7 +1,7 @@
 # ==========================================
 # BUILDER STAGE
 # ==========================================
-FROM golang:1.25-alpine AS builder
+FROM golang:alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -21,13 +21,17 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o bin/netbase-be .
 # ==========================================
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S appgroup \
+    && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
 COPY --from=builder /app/bin/netbase-be .
 
-RUN mkdir -p log
+RUN mkdir -p log && chown -R appuser:appgroup /app
+
+USER appuser
 
 ENV ENV=production
 ENV PORT=8080

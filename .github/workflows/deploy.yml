@@ -117,15 +117,14 @@ jobs:
                   - netbase-network
 
               migrate:
-                image: migrate/migrate
+                image: migrate/migrate:latest
                 container_name: netbase-migrate
                 restart: "no"
                 volumes:
                   - ./db/migrations:/migrations
-                command:
-                  - -path=/migrations
-                  - -database=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-netbase}?sslmode=${DB_SSLMODE:-disable}
-                  - up
+                environment:
+                  - MIGRATE_DB_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-netbase}?sslmode=${DB_SSLMODE:-disable}
+                entrypoint: ["sh", "-c", "migrate -path=/migrations -database=\"$$MIGRATE_DB_URL\" up"]
                 depends_on:
                   db:
                     condition: service_healthy

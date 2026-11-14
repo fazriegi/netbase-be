@@ -63,7 +63,7 @@ func (r *milestoneRepository) Update(ctx context.Context, data *domain.Milestone
 		UPDATE milestones
 		SET base_amount = :base_amount, target_amount = :target_amount, updated_at = now(), 
 		    is_completed = :is_completed, completion_date = :completion_date
-		WHERE user_id = :user_id AND title = :title
+		WHERE id = :id AND user_id = :user_id
 	`
 
 	_, err := db.NamedExecContext(ctx, query, data)
@@ -71,10 +71,10 @@ func (r *milestoneRepository) Update(ctx context.Context, data *domain.Milestone
 	return err
 }
 
-func (r *milestoneRepository) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *milestoneRepository) Delete(ctx context.Context, id, userId uuid.UUID) error {
 	db := getQueryer(ctx, r.db)
-	query := `DELETE FROM milestones WHERE id = $1`
-	_, err := db.ExecContext(ctx, query, id)
+	query := `DELETE FROM milestones WHERE id = $1 AND user_id = $2`
+	_, err := db.ExecContext(ctx, query, id, userId)
 
 	return err
 }

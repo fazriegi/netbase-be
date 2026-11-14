@@ -9,10 +9,34 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+const MaxPaginationLimit = 500
+
 var validColumnRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 
 type NamedQueryer interface {
 	NamedQueryContext(ctx context.Context, query string, arg interface{}) (*sqlx.Rows, error)
+}
+
+func extractIntPtr(v interface{}) *int {
+	switch val := v.(type) {
+	case *int:
+		return val
+	case int:
+		return &val
+	default:
+		return nil
+	}
+}
+
+func extractStringPtr(v interface{}) *string {
+	switch val := v.(type) {
+	case *string:
+		return val
+	case string:
+		return &val
+	default:
+		return nil
+	}
 }
 
 func SelectWithPagination(ctx context.Context, db NamedQueryer, query string, args map[string]interface{}) (*sqlx.Rows, error) {
@@ -20,21 +44,14 @@ func SelectWithPagination(ctx context.Context, db NamedQueryer, query string, ar
 		query += " "
 	}
 
-	if _, ok := args["limit"]; !ok {
-		args["limit"] = 0
+	queryArgs := make(map[string]interface{}, len(args)+2)
+	for k, v := range args {
+		queryArgs[k] = v
 	}
 
-	if _, ok := args["page"]; !ok {
-		args["page"] = 0
-	}
-
-	if _, ok := args["sort"]; !ok {
-		args["sort"] = ""
-	}
-
-	limit := args["limit"].(*int)
-	page := args["page"].(*int)
-	sort := args["sort"].(*string)
+	limit := extractIntPtr(queryArgs["limit"])
+	page := extractIntPtr(queryArgs["page"])
+	sort := extractStringPtr(queryArgs["sort"])
 
 	if sort != nil && *sort != "" {
 		sorts := strings.Split(*sort, ",")
@@ -71,18 +88,30 @@ func SelectWithPagination(ctx context.Context, db NamedQueryer, query string, ar
 		}
 	}
 
-	if page != nil && *page != 0 && limit != nil && *limit != 0 {
-		offset := (*page - 1) * *limit
+	if limit != nil && *limit > 0 {
+		safeLimit := *limit
+		if safeLimit > MaxPaginationLimit {
+			safeLimit = MaxPaginationLimit
+		}
+
+		safePage := 1
+		if page != nil && *page > 0 {
+			safePage = *page
+		}
+
+		offset := (safePage - 1) * safeLimit
 		query += "LIMIT :limit OFFSET :offset"
 
-		if args == nil {
-			args = make(map[string]interface{})
-		}
-		args["limit"] = limit
-		args["offset"] = offset
+		queryArgs["limit"] = safeLimit
+		queryArgs["offset"] = offset
+	} else {
+		// Prevent unbounded full-table dumps when pagination params are omitted or invalid
+		query += "LIMIT :limit OFFSET :offset"
+		queryArgs["limit"] = MaxPaginationLimit
+		queryArgs["offset"] = 0
 	}
 
-	rows, err := db.NamedQueryContext(ctx, query, args)
+	rows, err := db.NamedQueryContext(ctx, query, queryArgs)
 	if err != nil {
 		return nil, err
 	}

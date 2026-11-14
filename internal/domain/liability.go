@@ -37,10 +37,10 @@ type Liability struct {
 type CreateLiability struct {
 	ID               uuid.UUID
 	UserId           uuid.UUID
-	Name             string           `json:"name" validate:"required"`
+	Name             string           `json:"name" validate:"required,max=255"`
 	CategoryID       uuid.UUID        `json:"category_id" validate:"required"`
-	PrincipalAmount  *decimal.Decimal `json:"principal_amount" validate:"required"`
-	RemainingBalance *decimal.Decimal `json:"remaining_balance" validate:"required"`
+	PrincipalAmount  *decimal.Decimal `json:"principal_amount" validate:"required,decimal=gte=0"`
+	RemainingBalance *decimal.Decimal `json:"remaining_balance" validate:"required,decimal=gte=0"`
 	Details          any              `json:"details" validate:"required"`
 	CategoryType     string           `json:"category_type" validate:"required"`
 }
