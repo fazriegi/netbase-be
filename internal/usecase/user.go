@@ -84,6 +84,7 @@ func (uc *userUsecase) Register(ctx context.Context, req *domain.RegisterRequest
 func (uc *userUsecase) Login(ctx context.Context, req *domain.LoginRequest) (resp pkg.Response) {
 	user, err := uc.repo.GetByUsername(ctx, req.Username)
 	if err != nil {
+		password.DummyCheck(req.Password)
 		uc.log.Printf("[ERROR] repo.GetByUsername: %s", err.Error())
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidCreds, nil, nil)
 	}
@@ -126,9 +127,9 @@ func (uc *userUsecase) Login(ctx context.Context, req *domain.LoginRequest) (res
 }
 
 func (uc *userUsecase) RefreshToken(ctx context.Context, refreshToken, remoteAddr string) (resp pkg.Response) {
-	claims, err := token.ValidateToken(refreshToken)
+	claims, err := token.ValidateRefreshToken(refreshToken)
 	if err != nil {
-		uc.log.Printf("[ERROR] token.ValidateToken: %s", err.Error())
+		uc.log.Printf("[ERROR] token.ValidateRefreshToken: %s", err.Error())
 		return pkg.NewResponse(http.StatusUnauthorized, constant.ErrInvalidToken, nil, nil)
 	}
 
@@ -207,14 +208,27 @@ func (uc *userUsecase) Profile(ctx context.Context, accessToken string) (resp pk
 }
 
 func (uc *userUsecase) Logout(ctx context.Context, accessToken, refreshToken string) (resp pkg.Response) {
-	claims, err := token.ValidateToken(accessToken)
-	if err != nil {
-		uc.log.Printf("[ERROR] token.ValidateToken: %s", err.Error())
+	if refreshToken == "" {
+		return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
+	}
+
+	var claims *token.Claims
+	var err error
+	if accessToken != "" {
+		claims, err = token.ValidateAccessToken(accessToken)
+	}
+	if claims == nil {
+		claims, err = token.ValidateRefreshToken(refreshToken)
+	}
+	if err != nil || claims == nil {
+		uc.log.Printf("[ERROR] token validation during logout: %v", err)
+		return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
 	}
 
 	parsedUserID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		uc.log.Printf("[ERROR] uuid.Parse - invalid UUID format in claims: %s", err.Error())
+		return pkg.NewResponse(http.StatusOK, "Success", nil, nil)
 	}
 
 	_ = uc.tx.WithTransaction(ctx, func(txCtx context.Context) error {

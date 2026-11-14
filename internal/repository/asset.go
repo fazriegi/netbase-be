@@ -149,6 +149,9 @@ func (r *assetRepository) GetByID(ctx context.Context, id, userId uuid.UUID) (*d
 		FROM assets 
 		JOIN asset_categories ac ON assets.user_id = ac.user_id AND assets.category_id = ac.id
 		WHERE assets.id = $1 AND assets.user_id = $2`
+	if isTransaction(ctx) {
+		query += ` FOR UPDATE OF assets`
+	}
 	err := db.GetContext(ctx, &asset, query, id, userId)
 	if err == sql.ErrNoRows {
 		return nil, errors.New(constant.ErrNotFound)
@@ -201,8 +204,14 @@ func (r *assetRepository) UpdateStockPrice(ctx context.Context, ticker string, p
 	db := getQueryer(ctx, r.db)
 	query := `
 		UPDATE assets 
-		SET current_value = (details->>'quantity')::decimal * $1, updated_at = now() 
-		WHERE details->>'ticker_symbol' = $2
+		SET current_value = (assets.details->>'quantity')::decimal * $1, updated_at = now() 
+		FROM asset_categories ac
+		WHERE assets.category_id = ac.id
+			AND assets.user_id = ac.user_id
+			AND ac.base_type = 'investment'
+			AND ac.name = 'Stock'
+			AND assets.is_active = true
+			AND assets.details->>'ticker_symbol' = $2
 	`
 	_, err := db.ExecContext(ctx, query, price, ticker)
 

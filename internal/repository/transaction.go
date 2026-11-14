@@ -32,12 +32,12 @@ func (r *transactionRepository) ListCategory(ctx context.Context, req *domain.Li
 	args := []interface{}{req.UserID}
 
 	if req.BaseType != "" {
-		query += ` AND base_type = $2`
+		query += fmt.Sprintf(` AND base_type = $%d`, len(args)+1)
 		args = append(args, req.BaseType)
 	}
 
 	if req.Search != "" {
-		query += ` AND name ILIKE $3`
+		query += fmt.Sprintf(` AND name ILIKE $%d`, len(args)+1)
 		args = append(args, "%"+req.Search+"%")
 	}
 

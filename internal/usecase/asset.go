@@ -224,11 +224,15 @@ func (u *assetUsecase) UpdateStockPrices(ctx context.Context) error {
 
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(*tickers))
+	sem := make(chan struct{}, 5)
 
 	for _, ticker := range *tickers {
 		wg.Add(1)
 		go func(t string) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
 			price, err := u.yahooProvider.FetchPrice(ctx, t)
 			if err != nil {
 				u.log.Printf("[ERROR] Failed to fetch stock price for ticker %s: %v", t, err)

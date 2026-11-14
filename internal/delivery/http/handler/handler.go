@@ -41,7 +41,7 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 
 	// MILESTONE
 	milestoneRepo := repository.NewMilestoneRepository(db)
-	milestoneUC := usecase.NewMilestoneUsecase(logger, milestoneRepo, networthRepo)
+	milestoneUC := usecase.NewMilestoneUsecase(logger, milestoneRepo, networthRepo, txManager)
 
 	// DASHBOARD
 	dashboardUC := usecase.NewDashboardUsecase(logger, transactionRepo, milestoneRepo, networthRepo, userRepo)
@@ -56,18 +56,32 @@ func New(db *sqlx.DB, logger *log.Logger) http.Handler {
 	NewMilestoneHandler(mux, milestoneUC, logger)
 	NewDashboardHandler(mux, dashboardUC, logger)
 
-	origin := os.Getenv("ALLOWED_ORIGIN")
+	origin := strings.TrimSpace(os.Getenv("ALLOWED_ORIGIN"))
 	if origin == "" {
-		origin = "*"
+		origin = "http://localhost:5173,http://127.0.0.1:5173"
+	}
+
+	rawOrigins := strings.Split(origin, ",")
+	var allowedOrigins []string
+	allowCredentials := true
+	for _, o := range rawOrigins {
+		trimmed := strings.TrimSpace(o)
+		if trimmed == "*" {
+			allowCredentials = false
+		}
+		if trimmed != "" {
+			allowedOrigins = append(allowedOrigins, trimmed)
+		}
 	}
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   strings.Split(origin, ","),
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"POST", "GET", "OPTIONS", "PUT", "DELETE"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Requested-With"},
-		AllowCredentials: true,
+		AllowCredentials: allowCredentials,
 	})
 
 	recovery := middleware.Recovery(logger)
-	return recovery(c.Handler(mux))
+	security := middleware.RequestSecurity(allowedOrigins)
+	return recovery(c.Handler(security(mux)))
 }

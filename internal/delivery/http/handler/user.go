@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/fazriegi/netbase-be/internal/delivery/http/middleware"
@@ -27,9 +29,9 @@ func NewUserHandler(mux *http.ServeMux, uc usecase.UserUsecase, logger *log.Logg
 		logger:  logger,
 	}
 
-	mux.HandleFunc("POST /v1/register", handler.Register)
-	mux.HandleFunc("POST /v1/login", handler.Login)
-	mux.HandleFunc("POST /v1/refresh_token", handler.RefreshToken)
+	mux.HandleFunc("POST /v1/register", middleware.RateLimitAuth(10, time.Minute, handler.Register))
+	mux.HandleFunc("POST /v1/login", middleware.RateLimitAuth(15, time.Minute, handler.Login))
+	mux.HandleFunc("POST /v1/refresh_token", middleware.RateLimitAuth(30, time.Minute, handler.RefreshToken))
 	mux.HandleFunc("POST /v1/logout", handler.Logout)
 
 	mux.Handle("GET /v1/profile", middleware.MiddlewareAuth(http.HandlerFunc(handler.Profile)))
@@ -37,11 +39,25 @@ func NewUserHandler(mux *http.ServeMux, uc usecase.UserUsecase, logger *log.Logg
 	mux.Handle("PUT /v1/users/settings", middleware.MiddlewareAuth(http.HandlerFunc(handler.UpdateSettings)))
 }
 
+func extractClientIP(remoteAddr string) string {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err == nil && host != "" {
+		if len(host) > 45 {
+			return host[:45]
+		}
+		return host
+	}
+	if len(remoteAddr) > 45 {
+		return remoteAddr[:45]
+	}
+	return remoteAddr
+}
+
 func (h *UserHandler) setAuthCookies(w http.ResponseWriter, accessToken, refreshToken string) {
 	isSecure := os.Getenv("COOKIE_SECURE") == "true"
 
 	sameSite := http.SameSiteLaxMode
-	if isSecure {
+	if isSecure && strings.EqualFold(os.Getenv("COOKIE_SAMESITE"), "none") {
 		sameSite = http.SameSiteNoneMode
 	}
 
@@ -117,7 +133,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.RemoteAddr = r.RemoteAddr
+	req.RemoteAddr = extractClientIP(r.RemoteAddr)
 
 	response := h.usecase.Login(r.Context(), &req)
 	if response.Data != nil {
@@ -150,7 +166,7 @@ func (h *UserHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := h.usecase.RefreshToken(r.Context(), cookie.Value, r.RemoteAddr)
+	response := h.usecase.RefreshToken(r.Context(), cookie.Value, extractClientIP(r.RemoteAddr))
 	if response.Data != nil {
 		data, ok := response.Data.(map[string]any)
 		if !ok {
@@ -181,28 +197,20 @@ func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	accessToken, err := r.Cookie("access_token")
-	if err != nil {
-		pkg.NewResponse(http.StatusOK, "Success", nil, nil).HTTP(w)
-		return
+	var accessVal, refreshVal string
+	if accessToken, err := r.Cookie("access_token"); err == nil {
+		accessVal = accessToken.Value
+	}
+	if refreshToken, err := r.Cookie("refresh_token"); err == nil {
+		refreshVal = refreshToken.Value
 	}
 
-	refreshToken, err := r.Cookie("refresh_token")
-	if err != nil {
-		pkg.NewResponse(http.StatusOK, "Success", nil, nil).HTTP(w)
-		return
+	if accessVal != "" || refreshVal != "" {
+		_ = h.usecase.Logout(r.Context(), accessVal, refreshVal)
 	}
-
-	if accessToken.Value == "" || refreshToken.Value == "" {
-		pkg.NewResponse(http.StatusOK, "Success", nil, nil).HTTP(w)
-		return
-	}
-
-	response := h.usecase.Logout(r.Context(), accessToken.Value, refreshToken.Value)
 
 	h.setAuthCookies(w, "", "")
-
-	response.HTTP(w)
+	pkg.NewResponse(http.StatusOK, "Success", nil, nil).HTTP(w)
 }
 
 func (h *UserHandler) GetSettings(w http.ResponseWriter, r *http.Request) {

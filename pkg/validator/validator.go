@@ -10,6 +10,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+var (
+	digitRegex       = regexp.MustCompile(`\d`)
+	specialCharRegex = regexp.MustCompile(`[^\w\s]`)
+	lowerRegex       = regexp.MustCompile(`[a-z]`)
+	upperRegex       = regexp.MustCompile(`[A-Z]`)
+	tickerRegex      = regexp.MustCompile(`^[A-Za-z0-9.\-]{1,20}$`)
+)
+
 type ValidationErrResponse struct {
 	FailedField string `json:"failed_field"`
 	Tag         string `json:"tag"`
@@ -23,6 +31,7 @@ func ValidateRequest(data any) []ValidationErrResponse {
 	validate.RegisterValidation("password", password)        // register custom validator
 	validate.RegisterValidation("date", date)                // register custom validator
 	validate.RegisterValidation("decimal", decimalValidator) // register custom validator
+	validate.RegisterValidation("ticker", tickerValidator)   // register custom validator
 
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := fld.Tag.Get("json")
@@ -63,15 +72,26 @@ func password(fl validator.FieldLevel) bool {
 	password := fl.Field().String()
 
 	if password != "" {
-		hasDigit := regexp.MustCompile(`\d`).MatchString(password)
-		hasSpecialChar := regexp.MustCompile(`[^\w\s]`).MatchString(password)
-		hasLower := regexp.MustCompile(`[a-z]`).MatchString(password)
-		hasUpper := regexp.MustCompile(`[A-Z]`).MatchString(password)
+		if len(password) < 8 || len(password) > 72 {
+			return false
+		}
+		hasDigit := digitRegex.MatchString(password)
+		hasSpecialChar := specialCharRegex.MatchString(password)
+		hasLower := lowerRegex.MatchString(password)
+		hasUpper := upperRegex.MatchString(password)
 
-		return hasDigit && hasSpecialChar && hasLower && hasUpper && len(password) >= 8
+		return hasDigit && hasSpecialChar && hasLower && hasUpper
 	}
 
 	return true
+}
+
+func tickerValidator(fl validator.FieldLevel) bool {
+	val := fl.Field().String()
+	if val == "" {
+		return true
+	}
+	return tickerRegex.MatchString(val)
 }
 
 func date(fl validator.FieldLevel) bool {

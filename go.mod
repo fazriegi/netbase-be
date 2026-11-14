@@ -1,6 +1,6 @@
 module github.com/fazriegi/netbase-be
 
-go 1.25.0
+go 1.27.3
 
 require (
 	github.com/jmoiron/sqlx v1.4.0

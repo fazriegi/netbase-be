@@ -60,6 +60,12 @@ func (w queryerWrapper) NamedQueryContext(ctx context.Context, query string, arg
 	return sqlx.NamedQueryContext(ctx, w.sqlxQueryer, query, arg)
 }
 
+// isTransaction reports whether ctx carries an active database transaction.
+func isTransaction(ctx context.Context) bool {
+	_, ok := ctx.Value(txKey{}).(*sqlx.Tx)
+	return ok
+}
+
 // getQueryer returns the transaction if present in the context, otherwise it returns the base db connection.
 func getQueryer(ctx context.Context, db *sqlx.DB) Queryer {
 	if tx, ok := ctx.Value(txKey{}).(*sqlx.Tx); ok {
